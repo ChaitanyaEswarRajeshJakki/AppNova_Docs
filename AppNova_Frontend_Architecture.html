@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AppNova — React Frontend Architecture</title>
+<meta name="description" content="Infographic overview of the AppNova React frontend: layered architecture, components, services, and backend wiring." />
+<style>
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    font-family: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+    background: radial-gradient(ellipse at top, #0f172a 0%, #020617 60%, #000000 100%);
+    color: #e2e8f0;
+    line-height: 1.55;
+    min-height: 100vh;
+  }
+  a { color: #67e8f9; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .container { max-width: 1240px; margin: 0 auto; padding: 48px 24px 80px; }
+
+  /* Header */
+  .hero {
+    text-align: center;
+    padding: 24px 0 40px;
+    border-bottom: 1px solid #1e293b;
+    margin-bottom: 48px;
+  }
+  .hero h1 {
+    font-size: 48px;
+    margin: 0 0 12px;
+    background: linear-gradient(90deg, #22d3ee 0%, #8b5cf6 50%, #f472b6 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    letter-spacing: -0.5px;
+  }
+  .hero p { color: #94a3b8; font-size: 17px; margin: 0; }
+  .hero .badges { margin-top: 22px; display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+  .badge {
+    background: #0f172a; border: 1px solid #1e293b;
+    padding: 6px 14px; border-radius: 999px;
+    font-size: 12px; color: #cbd5e1;
+  }
+  .badge strong { color: #67e8f9; }
+
+  /* Stats */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 14px;
+    margin-bottom: 48px;
+  }
+  .stat {
+    background: linear-gradient(140deg, #0f172a, #0b1228);
+    border: 1px solid #1e293b;
+    border-radius: 14px;
+    padding: 20px;
+    text-align: center;
+    transition: transform 0.2s, border-color 0.2s;
+  }
+  .stat:hover { transform: translateY(-4px); border-color: #334155; }
+  .stat .num { font-size: 32px; font-weight: 800; margin: 0; }
+  .stat .lbl { color: #94a3b8; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
+  .stat.c1 .num { color: #22d3ee; }
+  .stat.c2 .num { color: #a78bfa; }
+  .stat.c3 .num { color: #f472b6; }
+  .stat.c4 .num { color: #34d399; }
+  .stat.c5 .num { color: #fbbf24; }
+
+  /* Layer sections */
+  .layer {
+    background: linear-gradient(140deg, #0f172a, #0b1228);
+    border: 1px solid #1e293b;
+    border-radius: 18px;
+    margin-bottom: 24px;
+    overflow: hidden;
+    box-shadow: 0 6px 24px rgba(0,0,0,0.35);
+  }
+  .layer-head {
+    display: flex; align-items: center; gap: 18px;
+    padding: 20px 28px;
+    border-bottom: 1px solid #1e293b;
+  }
+  .layer-num {
+    width: 44px; height: 44px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 20px; color: #fff;
+    flex-shrink: 0;
+  }
+  .layer-title { margin: 0; font-size: 22px; font-weight: 700; }
+  .layer-sub { color: #94a3b8; font-size: 13px; margin: 2px 0 0; }
+  .layer-body { padding: 24px 28px 28px; }
+
+  .l-entry  .layer-num { background: linear-gradient(140deg, #0ea5e9, #0284c7); }
+  .l-app    .layer-num { background: linear-gradient(140deg, #22d3ee, #06b6d4); color: #0b1020; }
+  .l-ctx    .layer-num { background: linear-gradient(140deg, #a78bfa, #7c3aed); }
+  .l-view   .layer-num { background: linear-gradient(140deg, #f472b6, #db2777); }
+  .l-comp   .layer-num { background: linear-gradient(140deg, #34d399, #059669); }
+  .l-svc    .layer-num { background: linear-gradient(140deg, #fbbf24, #d97706); color: #2a1a05; }
+  .l-be     .layer-num { background: linear-gradient(140deg, #f87171, #b91c1c); }
+
+  /* Grids */
+  .grid {
+    display: grid;
+    gap: 12px;
+  }
+  .grid-6 { grid-template-columns: repeat(6, 1fr); }
+  .grid-5 { grid-template-columns: repeat(5, 1fr); }
+  .grid-4 { grid-template-columns: repeat(4, 1fr); }
+  .grid-3 { grid-template-columns: repeat(3, 1fr); }
+  .grid-2 { grid-template-columns: repeat(2, 1fr); }
+
+  .card {
+    background: #0b1228;
+    border: 1px solid #1e293b;
+    border-radius: 10px;
+    padding: 14px;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+  .card:hover { border-color: #475569; transform: translateY(-2px); }
+  .card h4 { margin: 0 0 6px; font-size: 14px; font-weight: 700; }
+  .card p { margin: 0; font-size: 12px; color: #94a3b8; }
+
+  /* Tinted cards per layer */
+  .card.ctx  h4 { color: #c4b5fd; }
+  .card.view h4 { color: #fbcfe8; }
+  .card.comp h4 { color: #6ee7b7; }
+  .card.svc  h4 { color: #fbbf24; }
+  .card.be   h4 { color: #fda4af; }
+
+  /* Code-style row */
+  .endpoint {
+    font-family: "Cascadia Code", Consolas, Menlo, monospace;
+    background: #1a0606;
+    border: 1px solid #7f1d1d;
+    border-radius: 6px;
+    padding: 8px 12px;
+    margin-bottom: 6px;
+    font-size: 12px;
+    color: #fecaca;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+  .endpoint .method {
+    font-weight: 800;
+    min-width: 42px;
+    text-align: center;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 10px;
+  }
+  .method.get { background: #0c4a6e; color: #7dd3fc; }
+  .method.post { background: #14532d; color: #86efac; }
+  .method.sse { background: #78350f; color: #fbbf24; }
+  .method.del { background: #7f1d1d; color: #fca5a5; }
+
+  /* State diagram bits */
+  .state-box {
+    background: #1e1b4b;
+    border: 1px solid #4c1d95;
+    border-radius: 10px;
+    padding: 12px;
+  }
+  .state-box h5 { margin: 0 0 8px; color: #c4b5fd; font-size: 13px; font-weight: 700; }
+  .state-box p { margin: 0; font-size: 11px; color: #cbd5e1; }
+
+  /* Flow arrows between layers */
+  .flow {
+    text-align: center;
+    color: #475569;
+    font-size: 22px;
+    margin: -8px 0 16px;
+  }
+
+  /* Notes */
+  .note {
+    background: rgba(34, 211, 238, 0.06);
+    border-left: 3px solid #22d3ee;
+    padding: 12px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    color: #cbd5e1;
+    margin-top: 18px;
+  }
+
+  /* Patterns footer */
+  .patterns {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-top: 40px;
+  }
+  .pattern {
+    background: linear-gradient(140deg, #0f172a, #0b1228);
+    border: 1px solid #1e293b;
+    border-radius: 14px;
+    padding: 20px;
+  }
+  .pattern h3 { margin: 0 0 8px; font-size: 15px; }
+  .pattern p { margin: 0; font-size: 12px; color: #cbd5e1; }
+  .pattern.p1 h3 { color: #22d3ee; }
+  .pattern.p2 h3 { color: #a78bfa; }
+  .pattern.p3 h3 { color: #34d399; }
+  .pattern.p4 h3 { color: #fbbf24; }
+
+  footer {
+    text-align: center;
+    margin-top: 60px;
+    padding-top: 24px;
+    border-top: 1px solid #1e293b;
+    color: #64748b;
+    font-size: 12px;
+  }
+
+  /* SVG embed fallback */
+  .svg-preview {
+    margin: 40px 0;
+    padding: 24px;
+    background: #0b1228;
+    border: 1px solid #1e293b;
+    border-radius: 14px;
+    text-align: center;
+  }
+  .svg-preview img { max-width: 100%; height: auto; border-radius: 10px; }
+
+  @media (max-width: 900px) {
+    .grid-6, .grid-5, .grid-4 { grid-template-columns: repeat(2, 1fr); }
+    .grid-3, .grid-2 { grid-template-columns: 1fr; }
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .patterns { grid-template-columns: 1fr 1fr; }
+    .hero h1 { font-size: 32px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header class="hero">
+    <h1>AppNova — React Frontend Architecture</h1>
+    <p>IDE-style single-page app for legacy code analysis &amp; modernization</p>
+    <div class="badges">
+      <span class="badge"><strong>React</strong> 18.3</span>
+      <span class="badge"><strong>TypeScript</strong> 5.9</span>
+      <span class="badge"><strong>Vite</strong> 8</span>
+      <span class="badge"><strong>Tailwind</strong> 4</span>
+      <span class="badge"><strong>Axios</strong> + <strong>SSE</strong></span>
+      <span class="badge"><strong>Monaco</strong></span>
+      <span class="badge"><strong>Mermaid</strong></span>
+    </div>
+  </header>
+
+  <!-- Stats -->
+  <div class="stats">
+    <div class="stat c1"><div class="num">16</div><div class="lbl">Components</div></div>
+    <div class="stat c2"><div class="num">7</div><div class="lbl">API Services</div></div>
+    <div class="stat c3"><div class="num">6</div><div class="lbl">Main Views</div></div>
+    <div class="stat c4"><div class="num">12</div><div class="lbl">AI Agents</div></div>
+    <div class="stat c5"><div class="num">SSE</div><div class="lbl">Streaming</div></div>
+  </div>
+
+  <!-- SVG at a glance -->
+  <div class="svg-preview">
+    <img src="AppNova_Frontend_Architecture.svg" alt="Layered architecture diagram" />
+    <p style="color:#64748b; font-size:12px; margin-top: 12px;">At-a-glance diagram — see layers below for detail</p>
+  </div>
+
+  <!-- LAYER 1: ENTRY -->
+  <section class="layer l-entry">
+    <div class="layer-head">
+      <div class="layer-num">1</div>
+      <div>
+        <h2 class="layer-title">Entry Point</h2>
+        <p class="layer-sub"><code>src/main.tsx</code> — Bootstrap + live log stream</p>
+      </div>
+    </div>
+    <div class="layer-body">
+      <div class="grid grid-2">
+        <div>
+          <h4 style="color:#7dd3fc; margin-top:0;">React 18 StrictMode boot</h4>
+          <ul style="color:#cbd5e1; font-size:13px; margin:0; padding-left:18px;">
+            <li>Mounts <code>&lt;App/&gt;</code> inside a root <code>&lt;ErrorBoundary/&gt;</code></li>
+            <li>Opens an <code>EventSource</code> on <code>/api/logs/stream</code> — streams backend logs into DevTools</li>
+            <li>Auto-reconnects every 3 s if the backend restarts</li>
+          </ul>
+        </div>
+        <div>
+          <h4 style="color:#7dd3fc; margin-top:0;">Dev stack</h4>
+          <ul style="color:#cbd5e1; font-size:13px; margin:0; padding-left:18px;">
+            <li>Vite 8 dev server &amp; HMR</li>
+            <li>Tailwind CSS 4 via PostCSS pipeline</li>
+            <li>TypeScript 5.9 strict mode</li>
+            <li>Env: <code>VITE_API_BASE</code> (defaults to <code>http://localhost:8000</code>)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="flow">↓</div>
+
+  <!-- LAYER 2: APP SHELL -->
+  <section class="layer l-app">
+    <div class="layer-head">
+      <div class="layer-num">2</div>
+      <div>
+        <h2 class="layer-title">App Shell &amp; Routing</h2>
+        <p class="layer-sub"><code>src/App.tsx</code> — IDE-style layout + tab router</p>
+      </div>
+    </div>
+    <div class="layer-body">
+      <p style="color:#cbd5e1; font-size:13px; margin-top:0;">
+        The root wraps everything in <code>AppProvider</code>, then renders <code>AppContent</code>:
+        a VS Code–like layout with Activity bar, collapsible Sidebar, Tab strip, Editor area, and a right-docked Chat panel.
+      </p>
+      <div class="grid grid-6">
+        <div class="card"><h4 style="color:#67e8f9;">Dashboard</h4><p><code>dashboard</code></p></div>
+        <div class="card"><h4 style="color:#67e8f9;">Analysis</h4><p><code>analysis</code></p></div>
+        <div class="card"><h4 style="color:#67e8f9;">Per-agent</h4><p><code>&lt;agent-id&gt;</code></p></div>
+        <div class="card"><h4 style="color:#67e8f9;">Convert</h4><p><code>convert</code></p></div>
+        <div class="card"><h4 style="color:#67e8f9;">Diff</h4><p><code>diff</code></p></div>
+        <div class="card"><h4 style="color:#67e8f9;">Chat</h4><p>docked panel</p></div>
+      </div>
+      <div class="note">
+        <strong>Session recovery:</strong> on mount, the app probes <code>/api/active-session</code> and, if an analysis is running,
+        reattaches to <code>/api/session/{id}/events</code> — a spectator SSE stream that replays buffered history and then forwards live events.
+      </div>
+    </div>
+  </section>
+
+  <div class="flow">↓</div>
+
+  <!-- LAYER 3: CONTEXT -->
+  <section class="layer l-ctx">
+    <div class="layer-head">
+      <div class="layer-num">3</div>
+      <div>
+        <h2 class="layer-title">Global State (Context)</h2>
+        <p class="layer-sub"><code>src/contexts/AppContext.tsx</code> — single source of truth, localStorage persisted</p>
+      </div>
+    </div>
+    <div class="layer-body">
+      <div class="grid grid-5">
+        <div class="state-box"><h5>Session &amp; Files</h5><p>sessionId · files · filePaths · stackConfig (UI / API / DB / Cloud)</p></div>
+        <div class="state-box"><h5>Analysis</h5><p>selectedAgents · progress · results · thoughts · indexingStatus · interrupt flags</p></div>
+        <div class="state-box"><h5>Code Gen</h5><p>codeGenFiles (manifest) · live per-file stream · preview · artifact metadata</p></div>
+        <div class="state-box"><h5>Chat</h5><p>messages · mode (ask · plan · agent) · modelOverride · per-agent <code>reportChat</code> threads</p></div>
+        <div class="state-box"><h5>Conversion</h5><p>rows · running · totalBatches · targetStack · concurrency · statusLine</p></div>
+      </div>
+      <h4 style="color:#c4b5fd; margin:22px 0 10px;">Key actions (all async generators yielding typed SSE event objects)</h4>
+      <div class="grid grid-3">
+        <div class="card ctx"><h4>runAnalysis()</h4><p>Stream <code>/api/analyze-v2</code>; incremental progress updates with AbortController</p></div>
+        <div class="card ctx"><h4>runSingleAgent()</h4><p>Same stream scoped to one agent — supports force-rerun &amp; refine</p></div>
+        <div class="card ctx"><h4>resumeAnalysis()</h4><p>Resumes an interrupted run for pending agents only</p></div>
+        <div class="card ctx"><h4>cancelAnalysis()</h4><p>Aborts the current stream cleanly</p></div>
+        <div class="card ctx"><h4>startConversion()</h4><p>Detached per-file conversion stream (survives tab switches)</p></div>
+        <div class="card ctx"><h4>appendReportChatMessage()</h4><p>Pushes messages into a per-agent chat thread</p></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="flow">↓</div>
+
+  <!-- LAYER 4: VIEWS -->
+  <section class="layer l-view">
+    <div class="layer-head">
+      <div class="layer-num">4</div>
+      <div>
+        <h2 class="layer-title">Views</h2>
+        <p class="layer-sub">Tab-routed content regions</p>
+      </div>
+    </div>
+    <div class="layer-body">
+      <div class="grid grid-3">
+        <div class="card view"><h4>WelcomeView</h4><p>Dashboard with overview stats, agent cards, step-by-step guide</p></div>
+        <div class="card view"><h4>Analysis Progress</h4><p>Running / queued agents with per-agent thought streams</p></div>
+        <div class="card view"><h4>ReportView</h4><p>Markdown report with Mermaid diagrams, syntax highlighting, export + docked chat</p></div>
+        <div class="card view"><h4>ChatView</h4><p>Copilot-style streaming chat with code extraction, execution, attachments</p></div>
+        <div class="card view"><h4>ConversionPanel</h4><p>Per-file batch converter with progress, filters, concurrency controls</p></div>
+        <div class="card view"><h4>DiffView</h4><p>Monaco diff editor + file tree for generated-vs-original comparison</p></div>
+      </div>
+      <div class="note">
+        <strong>12 per-agent report tabs:</strong> architecture · code-analysis · code-generation · business-rules · security · devops · documentation · testing · data-migration · ui-ux · integration · migration-planner
+      </div>
+    </div>
+  </section>
+
+  <div class="flow">↓</div>
+
+  <!-- LAYER 5: COMPONENTS -->
+  <section class="layer l-comp">
+    <div class="layer-head">
+      <div class="layer-num">5</div>
+      <div>
+        <h2 class="layer-title">Components</h2>
+        <p class="layer-sub"><code>src/components/</code> — 16 reusable units</p>
+      </div>
+    </div>
+    <div class="layer-body">
+      <div class="grid grid-4">
+        <div class="card comp"><h4>Titlebar</h4><p>Logo · theme toggle · chat toggle</p></div>
+        <div class="card comp"><h4>Sidebar</h4><p>Upload (zip/GitHub) · stack config · agent multi-select · Generate</p></div>
+        <div class="card comp"><h4>CodePreviewTabs</h4><p>Code / Preview / Output / Diff tab set for code blocks</p></div>
+        <div class="card comp"><h4>ArtifactPanel</h4><p>Sandboxed iframe viewer for UI/UX agent HTML artifacts</p></div>
+
+        <div class="card comp"><h4>ThinkingBlock</h4><p>Expandable view of agent reasoning stages</p></div>
+        <div class="card comp"><h4>MultiStepProgress</h4><p>Step-by-step progress tracker with icons &amp; durations</p></div>
+        <div class="card comp"><h4>ExecutionReport</h4><p>Run output · errors · fix suggestions · deploy hints</p></div>
+        <div class="card comp"><h4>ReportChatPanel</h4><p>Per-agent docked chat with intent classifier</p></div>
+
+        <div class="card comp"><h4>AgentCompareView</h4><p>Side-by-side section comparison of two agent reports</p></div>
+        <div class="card comp"><h4>SettingsPanel</h4><p>Hooks · skills · slash-command reference</p></div>
+        <div class="card comp"><h4>ErrorBoundary</h4><p>Class component fallback with reset for render crashes</p></div>
+        <div class="card comp"><h4>ConversionPanel *</h4><p>Reused as both a view and component</p></div>
+      </div>
+      <div class="note">
+        <strong>Third-party rendering:</strong> Monaco Editor, Mermaid, react-markdown, remark-gfm, react-syntax-highlighter (Prism).
+      </div>
+    </div>
+  </section>
+
+  <div class="flow">↓</div>
+
+  <!-- LAYER 6: SERVICES -->
+  <section class="layer l-svc">
+    <div class="layer-head">
+      <div class="layer-num">6</div>
+      <div>
+        <h2 class="layer-title">Services (API Clients)</h2>
+        <p class="layer-sub"><code>src/services/api.ts</code> · <code>chatContext.ts</code></p>
+      </div>
+    </div>
+    <div class="layer-body">
+      <div class="grid grid-4">
+        <div class="card svc"><h4>AnalysisService</h4><p>streamAnalysis (SSE) · upload · index status · session state</p></div>
+        <div class="card svc"><h4>ChatService</h4><p>streamAgentChat (SSE) · history save/load</p></div>
+        <div class="card svc"><h4>DiffService</h4><p>generateDiff — side-by-side transformations</p></div>
+        <div class="card svc"><h4>ExportService</h4><p>Export report as markdown, docx, pdf</p></div>
+        <div class="card svc"><h4>ConversionService</h4><p>stream · manifest · status · cancel (idempotent)</p></div>
+        <div class="card svc"><h4>ArtifactService</h4><p>iframe URL · raw HTML · metadata (sha256, size)</p></div>
+        <div class="card svc"><h4>GeneratedFilesService</h4><p>List &amp; read generated output tree</p></div>
+        <div class="card svc"><h4>chatContext.ts</h4><p>Intent classifier: refine · ask · run modes</p></div>
+      </div>
+      <div class="note" style="background:rgba(251,191,36,.06); border-color:#fbbf24;">
+        <strong>Transport:</strong> Axios for request/response · Fetch + ReadableStream + EventSource for Server-Sent Events.
+        All streaming APIs return async generators that yield typed event objects.
+      </div>
+    </div>
+  </section>
+
+  <div class="flow">↓</div>
+
+  <!-- LAYER 7: BACKEND -->
+  <section class="layer l-be">
+    <div class="layer-head">
+      <div class="layer-num">7</div>
+      <div>
+        <h2 class="layer-title">Backend</h2>
+        <p class="layer-sub">FastAPI · Python · <code>localhost:8000</code> (<code>VITE_API_BASE</code> override)</p>
+      </div>
+    </div>
+    <div class="layer-body">
+      <div class="grid grid-2">
+        <div>
+          <h4 style="color:#fda4af; margin-top:0;">REST + SSE Endpoints</h4>
+          <div class="endpoint"><span class="method post">POST</span> /api/upload &nbsp;·&nbsp; /api/upload/github</div>
+          <div class="endpoint"><span class="method sse">SSE</span> /api/analyze-v2 <span style="color:#94a3b8; margin-left:auto;">← main stream</span></div>
+          <div class="endpoint"><span class="method sse">SSE</span> /api/session/{id}/events <span style="color:#94a3b8; margin-left:auto;">← spectator</span></div>
+          <div class="endpoint"><span class="method sse">SSE</span> /api/chat/stream &nbsp;·&nbsp; /api/chat/agent-stream</div>
+          <div class="endpoint"><span class="method sse">SSE</span> /api/convert/{id} <span style="color:#94a3b8; margin-left:auto;">← batch</span></div>
+          <div class="endpoint"><span class="method get">GET</span> /api/artifact/{id} &nbsp;·&nbsp; /api/artifact/{id}/meta</div>
+          <div class="endpoint"><span class="method post">POST</span> /api/diff &nbsp;·&nbsp; /api/execute &nbsp;·&nbsp; /api/export</div>
+          <div class="endpoint"><span class="method get">GET</span> /api/models &nbsp;·&nbsp; /api/agents &nbsp;·&nbsp; /api/health</div>
+          <div class="endpoint"><span class="method sse">SSE</span> /api/logs/stream <span style="color:#94a3b8; margin-left:auto;">← logs</span></div>
+          <div class="endpoint"><span class="method get">GET</span> /api/code/files/{id} &nbsp;·&nbsp; /api/code/file/{id}/{path}</div>
+          <div class="endpoint"><span class="method del">DEL</span> /api/convert/{id} &nbsp;·&nbsp; /api/session/{id}/cancel-agent/{id}</div>
+        </div>
+        <div>
+          <h4 style="color:#fda4af; margin-top:0;">12 AI Agents</h4>
+          <div class="grid grid-2" style="margin-bottom:20px;">
+            <div class="card be"><h4>architecture</h4></div>
+            <div class="card be"><h4>code-analysis</h4></div>
+            <div class="card be"><h4>code-generation</h4></div>
+            <div class="card be"><h4>business-rules</h4></div>
+            <div class="card be"><h4>security</h4></div>
+            <div class="card be"><h4>devops</h4></div>
+            <div class="card be"><h4>documentation</h4></div>
+            <div class="card be"><h4>testing</h4></div>
+            <div class="card be"><h4>data-migration</h4></div>
+            <div class="card be"><h4>ui-ux</h4></div>
+            <div class="card be"><h4>integration</h4></div>
+            <div class="card be"><h4>migration-planner</h4></div>
+          </div>
+
+          <h4 style="color:#fda4af;">Data &amp; LLM Providers</h4>
+          <div class="grid grid-2">
+            <div class="card be"><h4>ChromaDB</h4><p>Vector store for code indexing</p></div>
+            <div class="card be"><h4>Session uploads</h4><p>In-memory + file cache</p></div>
+          </div>
+          <div class="card be" style="margin-top:10px;">
+            <h4>LLM Providers</h4>
+            <p>Groq · Gemini · OpenAI · Ollama (switchable)</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PATTERNS -->
+  <h2 style="text-align:center; margin:60px 0 20px; color:#e2e8f0;">Key Design Patterns</h2>
+  <div class="patterns">
+    <div class="pattern p1">
+      <h3>Spectator Mode</h3>
+      <p>Multi-tab safe — the app re-attaches to live SSE via <code>/api/session/{id}/events</code>, which replays buffered history before forwarding live events.</p>
+    </div>
+    <div class="pattern p2">
+      <h3>Detached Streaming</h3>
+      <p>Conversion keeps running while the user switches tabs: the async generator lives in <code>AppContext</code>, not in the view.</p>
+    </div>
+    <div class="pattern p3">
+      <h3>Error Isolation</h3>
+      <p><code>ErrorBoundary</code> wraps the App root plus every major section, so a single render crash never takes down the whole UI.</p>
+    </div>
+    <div class="pattern p4">
+      <h3>Intent Classification</h3>
+      <p>Report-chat input auto-routes to <em>refine</em>, <em>ask</em>, or <em>run</em> based on <code>@mentions</code>, slash commands, and keyword heuristics.</p>
+    </div>
+  </div>
+
+  <footer>
+    AppNova v2 · React 18 + TypeScript + Vite 8 + Tailwind 4 · Generated 2026
+  </footer>
+
+</div>
+</body>
+</html>

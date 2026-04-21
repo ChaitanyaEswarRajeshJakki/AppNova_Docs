@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AppNova — Documentation</title>
+<meta name="description" content="AppNova v2 documentation hub: architecture diagrams, workflow, and frontend infographic." />
+<style>
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    font-family: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+    background: radial-gradient(ellipse at top, #0f172a 0%, #020617 60%, #000000 100%);
+    color: #e2e8f0;
+    min-height: 100vh;
+    line-height: 1.6;
+  }
+  a { color: #67e8f9; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .container { max-width: 1100px; margin: 0 auto; padding: 60px 24px 80px; }
+  header { text-align: center; margin-bottom: 56px; padding-bottom: 32px; border-bottom: 1px solid #1e293b; }
+  header h1 {
+    font-size: 52px; margin: 0 0 12px;
+    background: linear-gradient(90deg, #22d3ee, #8b5cf6, #f472b6);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    letter-spacing: -1px;
+  }
+  header p { margin: 0; color: #94a3b8; font-size: 18px; }
+  header .badges { margin-top: 22px; display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+  .badge {
+    background: #0f172a; border: 1px solid #1e293b; border-radius: 999px;
+    padding: 5px 12px; font-size: 12px; color: #cbd5e1;
+  }
+  .badge strong { color: #67e8f9; }
+
+  .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+  .card {
+    background: linear-gradient(140deg, #0f172a, #0b1228);
+    border: 1px solid #1e293b;
+    border-radius: 14px;
+    padding: 28px;
+    transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+    display: block;
+    color: inherit;
+  }
+  .card:hover {
+    transform: translateY(-4px);
+    border-color: #475569;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    text-decoration: none;
+  }
+  .card h2 { margin: 0 0 10px; font-size: 22px; }
+  .card p { margin: 0; color: #94a3b8; font-size: 14px; }
+  .card .tag {
+    display: inline-block; margin-bottom: 12px;
+    font-size: 11px; letter-spacing: 1px; text-transform: uppercase;
+    padding: 3px 10px; border-radius: 6px;
+  }
+
+  .c-frontend h2 { color: #22d3ee; }
+  .c-frontend .tag { background: rgba(34,211,238,.1); color: #67e8f9; }
+  .c-arch h2 { color: #a78bfa; }
+  .c-arch .tag { background: rgba(167,139,250,.1); color: #c4b5fd; }
+  .c-complete h2 { color: #f472b6; }
+  .c-complete .tag { background: rgba(244,114,182,.1); color: #fbcfe8; }
+  .c-diagrams h2 { color: #34d399; }
+  .c-diagrams .tag { background: rgba(52,211,153,.1); color: #6ee7b7; }
+  .c-workflow h2 { color: #fbbf24; }
+  .c-workflow .tag { background: rgba(251,191,36,.1); color: #fde68a; }
+  .c-readme h2 { color: #f87171; }
+  .c-readme .tag { background: rgba(248,113,113,.1); color: #fca5a5; }
+
+  footer { text-align: center; margin-top: 60px; padding-top: 24px; border-top: 1px solid #1e293b; color: #64748b; font-size: 12px; }
+
+  @media (max-width: 720px) {
+    .grid { grid-template-columns: 1fr; }
+    header h1 { font-size: 36px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>AppNova Documentation</h1>
+    <p>AI-powered codebase intelligence platform — architecture, workflow &amp; design docs</p>
+    <div class="badges">
+      <span class="badge"><strong>v2</strong> Claude Code CLI</span>
+      <span class="badge"><strong>React</strong> 18</span>
+      <span class="badge"><strong>FastAPI</strong></span>
+      <span class="badge"><strong>12</strong> AI Agents</span>
+    </div>
+  </header>
+
+  <div class="grid">
+    <a href="AppNova_Frontend_Architecture.html" class="card c-frontend">
+      <span class="tag">Infographic</span>
+      <h2>Frontend Architecture</h2>
+      <p>Layered visual breakdown of the React frontend — entry, context, views, components, services, and backend wiring. Includes an embeddable SVG.</p>
+    </a>
+
+    <a href="AppNova_Architecture.html" class="card c-arch">
+      <span class="tag">Architecture</span>
+      <h2>System Architecture</h2>
+      <p>High-level architecture of the AppNova platform — component layout, data flow, and key integrations.</p>
+    </a>
+
+    <a href="AppNova_Complete_Architecture.html" class="card c-complete">
+      <span class="tag">Deep Dive</span>
+      <h2>Complete Architecture</h2>
+      <p>Detailed end-to-end architecture with full-stack interactions, session flow, and streaming pipelines.</p>
+    </a>
+
+    <a href="AppNova_Architecture_Diagrams.html" class="card c-diagrams">
+      <span class="tag">Diagrams</span>
+      <h2>Architecture Diagrams</h2>
+      <p>Mermaid-rendered diagrams illustrating system topology, agent orchestration, and data contracts.</p>
+    </a>
+
+    <a href="AppNova_Workflow.html" class="card c-workflow">
+      <span class="tag">Workflow</span>
+      <h2>User Workflow</h2>
+      <p>Step-by-step user journey — upload → index → analyze → convert → export — with every interaction shown.</p>
+    </a>
+
+    <a href="README.md" class="card c-readme">
+      <span class="tag">Readme</span>
+      <h2>Project README</h2>
+      <p>The full repository README with feature overview, v1 → v2 changelog, setup instructions, and badges.</p>
+    </a>
+  </div>
+
+  <footer>AppNova v2 · Documentation Hub · 2026</footer>
+</div>
+</body>
+</html>

@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AppNova — System Architecture</title>
+<style>
+  /* ─────────────────────────────────────────
+     ALL styles are defined here — zero inline
+     style attributes appear in the HTML body.
+     ───────────────────────────────────────── */
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #0d0f14;
+    color: #e2e8f0;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    min-height: 100vh;
+    padding: 32px 40px 60px;
+  }
+
+  /* ── Page header ── */
+  .page-header {
+    text-align: center;
+    margin-bottom: 40px;
+  }
+  .page-header h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: .04em;
+    background: linear-gradient(135deg, #60a5fa, #a78bfa, #34d399);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .page-header p {
+    margin-top: 6px;
+    color: #64748b;
+    font-size: .9rem;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+  }
+
+  /* ── Layout columns ── */
+  .layout {
+    display: grid;
+    grid-template-columns: 1fr 2.6fr 1fr;
+    gap: 20px;
+    align-items: start;
+  }
+
+  /* ── Panel (card) ── */
+  .panel {
+    border-radius: 14px;
+    border: 1px solid;
+    overflow: hidden;
+  }
+  .panel-header {
+    padding: 10px 16px;
+    font-size: .75rem;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .panel-body {
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  /* ── Colour themes ── */
+  .blue  { border-color: #2563eb44; background: #0f172a; }
+  .blue  .panel-header { background: #1e3a5f; color: #93c5fd; }
+  .purple{ border-color: #7c3aed44; background: #0f1020; }
+  .purple .panel-header { background: #2e1065; color: #c4b5fd; }
+  .green { border-color: #05966944; background: #051a10; }
+  .green .panel-header { background: #064e3b; color: #6ee7b7; }
+  .orange{ border-color: #ea580c44; background: #130a00; }
+  .orange .panel-header { background: #431407; color: #fdba74; }
+  .rose  { border-color: #e1184444; background: #130010; }
+  .rose  .panel-header { background: #4c0519; color: #fda4af; }
+  .slate { border-color: #47556944; background: #0c111c; }
+  .slate .panel-header { background: #1e293b; color: #94a3b8; }
+  .teal  { border-color: #0d948444; background: #021a18; }
+  .teal  .panel-header { background: #134e4a; color: #5eead4; }
+  .amber { border-color: #d9770644; background: #120a00; }
+  .amber .panel-header { background: #451a03; color: #fcd34d; }
+
+  /* ── Chip / tag ── */
+  .chip {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: .72rem;
+    font-weight: 600;
+    line-height: 1.6;
+    white-space: nowrap;
+  }
+  .chip-blue   { background: #1e3a5f; color: #93c5fd; border: 1px solid #2563eb55; }
+  .chip-purple { background: #2e1065; color: #c4b5fd; border: 1px solid #7c3aed55; }
+  .chip-green  { background: #064e3b; color: #6ee7b7; border: 1px solid #05966955; }
+  .chip-orange { background: #431407; color: #fdba74; border: 1px solid #ea580c55; }
+  .chip-rose   { background: #4c0519; color: #fda4af; border: 1px solid #e1184455; }
+  .chip-slate  { background: #1e293b; color: #94a3b8; border: 1px solid #47556955; }
+  .chip-teal   { background: #134e4a; color: #5eead4; border: 1px solid #0d948455; }
+  .chip-amber  { background: #451a03; color: #fcd34d; border: 1px solid #d9770655; }
+
+  /* ── Row of chips ── */
+  .chip-row { display: flex; flex-wrap: wrap; gap: 5px; }
+
+  /* ── Label ── */
+  .label {
+    font-size: .68rem;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    margin-bottom: 2px;
+  }
+
+  /* ── Section title (inside panel body) ── */
+  .section-title {
+    font-size: .7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    margin-top: 6px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid #ffffff0d;
+    color: #64748b;
+  }
+
+  /* ── Divider ── */
+  .divider { height: 1px; background: #ffffff0d; margin: 4px 0; }
+
+  /* ── Center column ── */
+  .center-col {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* ── Pipeline row ── */
+  .pipeline {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    border-radius: 14px;
+    overflow: hidden;
+    border: 1px solid #334155;
+    background: #0d1117;
+  }
+  .pipe-node {
+    flex: 1;
+    padding: 12px 10px;
+    text-align: center;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    border-right: 1px solid #1e293b;
+  }
+  .pipe-node:last-child { border-right: none; }
+  .pipe-node .icon { font-size: 1.4rem; }
+  .pipe-node .name {
+    font-size: .7rem;
+    font-weight: 700;
+    color: #e2e8f0;
+    text-align: center;
+  }
+  .pipe-node .desc {
+    font-size: .62rem;
+    color: #64748b;
+    text-align: center;
+    line-height: 1.4;
+  }
+  .pipe-node.tier1 { background: #0f1820; }
+  .pipe-node.tier2 { background: #120f20; }
+  .pipe-node.tier3 { background: #0a1a15; }
+
+  /* arrow between pipe nodes */
+  .pipe-arrow {
+    display: flex;
+    align-items: center;
+    color: #334155;
+    font-size: 1rem;
+    padding: 0 2px;
+    background: #0d1117;
+    z-index: 1;
+  }
+
+  /* ── Agent grid ── */
+  .agent-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 6px;
+  }
+  .agent-card {
+    border-radius: 8px;
+    padding: 8px 4px;
+    text-align: center;
+    border: 1px solid #1e293b;
+    background: #0a0f1a;
+  }
+  .agent-card .a-icon { font-size: 1.1rem; }
+  .agent-card .a-name {
+    font-size: .6rem;
+    font-weight: 600;
+    color: #94a3b8;
+    margin-top: 3px;
+    line-height: 1.3;
+  }
+  .agent-card.react-agent { border-color: #7c3aed55; background: #130a20; }
+  .agent-card.react-agent .a-name { color: #c4b5fd; }
+
+  /* ── SSE flow row ── */
+  .sse-flow {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .sse-event {
+    padding: 3px 10px;
+    border-radius: 4px;
+    font-size: .68rem;
+    font-weight: 700;
+    font-family: monospace;
+    background: #1e293b;
+    color: #60a5fa;
+    border: 1px solid #2563eb44;
+  }
+  .sse-arrow { color: #334155; font-size: .85rem; }
+
+  /* ── Endpoint list ── */
+  .endpoint {
+    display: flex;
+    align-items: baseline;
+    gap: 7px;
+    font-size: .72rem;
+    padding: 3px 0;
+  }
+  .method {
+    font-weight: 800;
+    font-family: monospace;
+    font-size: .65rem;
+    padding: 1px 6px;
+    border-radius: 3px;
+    flex-shrink: 0;
+  }
+  .m-post { background: #451a03; color: #fdba74; }
+  .m-get  { background: #064e3b; color: #6ee7b7; }
+  .ep-path { color: #cbd5e1; font-family: monospace; }
+  .ep-note { color: #475569; font-size: .64rem; }
+
+  /* ── State field table ── */
+  .state-field {
+    display: flex;
+    justify-content: space-between;
+    font-size: .68rem;
+    padding: 3px 0;
+    border-bottom: 1px solid #0f172a;
+  }
+  .sf-key   { color: #7dd3fc; font-family: monospace; }
+  .sf-type  { color: #64748b; font-family: monospace; font-size: .62rem; }
+  .sf-new   { color: #34d399; font-size: .6rem; font-weight: 700; margin-left: 4px; }
+
+  /* ── Bottom row ── */
+  .bottom-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-top: 20px;
+  }
+
+  /* ── Connection legend ── */
+  .legend {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 28px;
+    padding-top: 20px;
+    border-top: 1px solid #1e293b;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: .72rem;
+    color: #64748b;
+  }
+  .legend-line {
+    width: 28px;
+    height: 2px;
+    border-radius: 2px;
+  }
+
+  /* ── Token saving badge ── */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: #064e3b;
+    border: 1px solid #059669;
+    color: #6ee7b7;
+    border-radius: 6px;
+    padding: 3px 10px;
+    font-size: .68rem;
+    font-weight: 700;
+  }
+
+  /* ── Connection arrows ── */
+  .conn-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: .72rem;
+    color: #475569;
+    padding: 4px 0;
+  }
+  .conn-arrow { color: #2563eb; font-size: 1rem; }
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: #0d0f14; }
+  ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 3px; }
+
+  /* ── utility classes – all inline style= removed ── */
+  .side-col       { display: flex; flex-direction: column; gap: 16px; }
+  .ep-grid        { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .two-col        { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .pipeline-bar   { display: flex; align-items: center; justify-content: space-between; padding: 0 4px; }
+  .pipeline-title { font-size: .8rem; font-weight: 700; color: #94a3b8; letter-spacing: .06em; text-transform: uppercase; }
+  .pipe-accent    { border-left: 2px solid #7c3aed44; }
+  .pipe-wide      { flex: 1.6; }
+  .label-mt6      { margin-top: 6px; }
+  .label-mt8      { margin-top: 8px; }
+  .sub-green      { font-size: .7rem; color: #6ee7b7; font-weight: 600; }
+  .sub-emerald    { font-size: .7rem; color: #34d399; font-weight: 600; }
+  .sub-purple     { font-size: .7rem; color: #c4b5fd; font-weight: 600; }
+  .sub-purple2    { font-size: .7rem; color: #c4b5fd; font-weight: 600; margin-top: 2px; }
+  .sub-amber1     { font-size: .72rem; color: #fcd34d; font-weight: 600; margin-bottom: 4px; }
+  .sub-amber2     { font-size: .72rem; color: #fcd34d; font-weight: 600; margin-top: 6px; margin-bottom: 4px; }
+  .sub-teal       { font-size: .7rem; color: #5eead4; line-height: 1.7; }
+  .sub-rose       { font-size: .7rem; color: #fda4af; line-height: 1.7; }
+  .sub-dkgrn      { font-size: .68rem; color: #064e3b; }
+  .info-160       { font-size: .68rem; color: #64748b; line-height: 1.6; }
+  .info-170       { font-size: .68rem; color: #64748b; line-height: 1.7; }
+  .info-150       { font-size: .68rem; color: #64748b; line-height: 1.5; }
+  .info-160-mt4   { font-size: .68rem; color: #64748b; line-height: 1.6; margin-top: 4px; }
+  .info-170-mt4   { font-size: .68rem; color: #64748b; line-height: 1.7; margin-top: 4px; }
+  .info-xs        { font-size: .65rem; color: #475569; line-height: 1.6; }
+  .info-sse-note  { margin-top: 4px; font-size: .65rem; color: #475569; line-height: 1.6; }
+  .mono-list      { font-size: .68rem; color: #64748b; line-height: 1.8; font-family: monospace; }
+  .config-text    { font-size: .68rem; color: #94a3b8; font-family: monospace; line-height: 1.8; }
+  .files-list     { font-size: .68rem; line-height: 1.9; font-family: monospace; }
+  .ext-text       { font-size: .72rem; line-height: 2; }
+  .tools-note     { font-size: .66rem; color: #64748b; margin-top: 4px; line-height: 1.5; }
+  .agent-legend   { margin-top: 8px; display: flex; gap: 12px; font-size: .65rem; color: #475569; }
+  .tag-react      { color: #7c3aed; font-size: .55rem; }
+  .tag-found      { color: #34d399; font-size: .55rem; }
+  .metric-title   { font-size: .7rem; font-weight: 700; color: #34d399; margin-bottom: 2px; }
+  .ll-blue        { background: #60a5fa; }
+  .ll-orange      { background: #f97316; }
+  .ll-purple      { background: #a78bfa; }
+  .ll-green       { background: #34d399; }
+  .ll-dashed      { height: 0; border-top: 2px dashed #f43f5e; background: none; }
+  .legend-note    { color: #64748b; font-size: .7rem; }
+  .c-sky          { color: #7dd3fc; }
+  .c-blue         { color: #60a5fa; }
+  .c-lilac        { color: #a78bfa; }
+  .c-lit          { color: #c4b5fd; }
+  .c-green        { color: #34d399; }
+  .c-dkgrn        { color: #064e3b; }
+  .c-emrld        { color: #059669; font-size: .6rem; font-weight: 700; }
+  .c-red          { color: #f87171; }
+  .c-red-new      { color: #f43f5e; font-size: .6rem; }
+  .c-amber        { color: #fcd34d; }
+  .c-teal         { color: #5eead4; }
+  .c-rose         { color: #fda4af; }
+  .c-muted        { color: #475569; }
+  .c-slate        { color: #94a3b8; }
+  .c-plus         { color: #34d399; }
+  .c-tilde        { color: #fbbf24; }
+
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════ PAGE HEADER ═══════════════════════ -->
+<div class="page-header">
+  <h1>⚡ AppNova — System Architecture</h1>
+  <p>Full-Stack AI Modernization Platform · React + FastAPI + <strong style="color:#F59E0B;">Claude Code CLI (v2)</strong> + LangGraph + ChromaDB (fallback)</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     v2 banner — Claude Code CLI runner (2026-04-21)
+     ═══════════════════════════════════════════════════════════════════════ -->
+<section style="max-width:1600px;margin:0 auto 16px;padding:14px 22px;border-radius:10px;
+                background:linear-gradient(135deg,#FEF3C7 0%,#FDE68A 100%);
+                border:1px solid #F59E0B;color:#78350F;
+                font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+                font-size:13px;line-height:1.55;box-shadow:0 2px 8px rgba(245,158,11,0.15);">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:5px;flex-wrap:wrap;">
+    <span style="background:#F59E0B;color:#FEF3C7;padding:2px 10px;border-radius:4px;
+                 font-size:11px;font-weight:700;letter-spacing:0.05em;">NEW &middot; v2 &middot; 2026-04-21</span>
+    <strong style="font-size:14px;color:#78350F;">
+      Claude Code CLI runner &middot; subscription primary, 4-provider cascade fallback
+    </strong>
+  </div>
+  <p style="margin:0;">
+    The 3-column diagram below maps the <strong>v1 LangGraph + ChromaDB + 4-provider</strong> pipeline, still reachable at
+    <code style="background:rgba(120,53,15,0.1);padding:1px 5px;border-radius:3px;">/api/analyze</code>.
+    The new default <code style="background:rgba(120,53,15,0.1);padding:1px 5px;border-radius:3px;">/api/analyze-v2</code>
+    and <code style="background:rgba(120,53,15,0.1);padding:1px 5px;border-radius:3px;">/api/chat</code> run each agent as a
+    <code style="background:rgba(120,53,15,0.1);padding:1px 5px;border-radius:3px;">claude -p</code> subprocess under the Max subscription.
+    See the v2 panel at the bottom of this diagram for the new module set, or
+    <a href="changes.md" style="color:#B45309;font-weight:600;">changes.md (2026-04-21)</a> for the full port log + 9 hotfixes.
+  </p>
+</section>
+
+<!-- ═══════════════════════ MAIN 3-COLUMN LAYOUT ═══════════════════════ -->
+<div class="layout">
+
+  <!-- ═══════ LEFT COLUMN ═══════ -->
+  <div class="side-col">
+
+    <!-- Frontend -->
+    <div class="panel blue">
+      <div class="panel-header">🌐 Frontend — React + Vite</div>
+      <div class="panel-body">
+        <div class="label">UI Components</div>
+        <div class="chip-row">
+          <span class="chip chip-blue">Titlebar</span>
+          <span class="chip chip-blue">Sidebar</span>
+          <span class="chip chip-blue">WelcomeView</span>
+          <span class="chip chip-blue">ReportView</span>
+          <span class="chip chip-blue">ChatView</span>
+          <span class="chip chip-blue">DiffView</span>
+          <span class="chip chip-blue">AgentCompare</span>
+          <span class="chip chip-blue">ThinkingBlock</span>
+        </div>
+        <div class="divider"></div>
+        <div class="label">Global State · AppContext.tsx</div>
+        <div class="info-170">
+          <span class="c-sky">sessionId</span> · <span class="c-sky">files</span> · <span class="c-sky">stackConfig</span><br/>
+          <span class="c-sky">selectedAgents</span> · <span class="c-sky">analysisResults</span><br/>
+          <span class="c-sky">analysisProgress</span> · <span class="c-sky">chatMessages</span><br/>
+          <span class="c-sky">agentThoughts</span> · <span class="c-sky">theme</span>
+        </div>
+        <div class="divider"></div>
+        <div class="label">API Client · services/api.ts</div>
+        <div class="info-160">
+          axios → <span class="c-blue">http://localhost:8000</span><br/>
+          SSE EventSource for analyze &amp; chat<br/>
+          Interceptors for error handling
+        </div>
+        <div class="divider"></div>
+        <div class="label">Stack</div>
+        <div class="chip-row">
+          <span class="chip chip-slate">React 18</span>
+          <span class="chip chip-slate">TypeScript</span>
+          <span class="chip chip-slate">Vite 5</span>
+          <span class="chip chip-slate">Tailwind CSS</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- SSE Events -->
+    <div class="panel slate">
+      <div class="panel-header">📡 SSE Event Stream</div>
+      <div class="panel-body">
+        <div class="label">Analysis events (in order)</div>
+        <div class="sse-flow">
+          <span class="sse-event">start</span>
+          <span class="sse-arrow">›</span>
+          <span class="sse-event">thinking</span>
+          <span class="sse-arrow">›</span>
+          <span class="sse-event">complete</span>
+          <span class="sse-arrow">›</span>
+          <span class="sse-event">report</span>
+          <span class="sse-arrow">›</span>
+          <span class="sse-event">done</span>
+        </div>
+        <div class="info-sse-note">
+          Each agent emits <span class="c-blue">thinking</span> (progress) +<br/>
+          <span class="c-blue">complete</span> (result tab) events
+        </div>
+      </div>
+    </div>
+
+    <!-- AnalysisState -->
+    <div class="panel purple">
+      <div class="panel-header">🗂️ AnalysisState (TypedDict)</div>
+      <div class="panel-body">
+        <div class="section-title">Input Fields</div>
+        <div class="state-field"><span class="sf-key">session_id</span><span class="sf-type">str</span></div>
+        <div class="state-field"><span class="sf-key">files</span><span class="sf-type">list[dict]</span></div>
+        <div class="state-field"><span class="sf-key">stack</span><span class="sf-type">dict</span></div>
+        <div class="state-field"><span class="sf-key">agent_ids</span><span class="sf-type">list[str]</span></div>
+        <div class="state-field"><span class="sf-key">model_override</span><span class="sf-type">str?</span></div>
+        <div class="section-title">Processing</div>
+        <div class="state-field"><span class="sf-key">file_summaries</span><span class="sf-type">str</span></div>
+        <div class="state-field"><span class="sf-key">code_chunks</span><span class="sf-type">str</span></div>
+        <div class="state-field"><span class="sf-key">indexed</span><span class="sf-type">bool</span></div>
+        <div class="state-field">
+          <span class="sf-key">code_analysis_context</span>
+          <span><span class="sf-type">str</span><span class="sf-new">NEW</span></span>
+        </div>
+        <div class="section-title">Output</div>
+        <div class="state-field"><span class="sf-key">results</span><span class="sf-type">list[dict] (+)</span></div>
+        <div class="state-field"><span class="sf-key">errors</span><span class="sf-type">list[str] (+)</span></div>
+        <div class="state-field"><span class="sf-key">final_report</span><span class="sf-type">str</span></div>
+        <div class="state-field"><span class="sf-key">docx_path</span><span class="sf-type">str?</span></div>
+      </div>
+    </div>
+
+  </div><!-- end left col -->
+
+  <!-- ═══════ CENTER COLUMN ═══════ -->
+  <div class="center-col">
+
+    <!-- FastAPI header -->
+    <div class="panel orange">
+      <div class="panel-header">⚙️ FastAPI Backend · main.py · :8000</div>
+      <div class="panel-body">
+        <div class="ep-grid">
+          <div>
+            <div class="label">Upload</div>
+            <div class="endpoint"><span class="method m-post">POST</span><span class="ep-path">/api/upload</span></div>
+            <div class="endpoint"><span class="method m-post">POST</span><span class="ep-path">/api/upload/github</span></div>
+            <div class="label label-mt8">Analysis</div>
+            <div class="endpoint"><span class="method m-post">POST</span><span class="ep-path">/api/analyze</span><span class="ep-note"> SSE</span></div>
+            <div class="label label-mt8">Diff</div>
+            <div class="endpoint"><span class="method m-post">POST</span><span class="ep-path">/api/diff</span></div>
+          </div>
+          <div>
+            <div class="label">Chat</div>
+            <div class="endpoint"><span class="method m-get">GET</span><span class="ep-path">/api/chat/stream</span><span class="ep-note"> SSE</span></div>
+            <div class="endpoint"><span class="method m-post">POST</span><span class="ep-path">/api/chat</span></div>
+            <div class="label label-mt8">Export / Execute</div>
+            <div class="endpoint"><span class="method m-post">POST</span><span class="ep-path">/api/export</span></div>
+            <div class="endpoint"><span class="method m-post">POST</span><span class="ep-path">/api/execute</span></div>
+            <div class="label label-mt8">System</div>
+            <div class="endpoint"><span class="method m-get">GET</span><span class="ep-path">/health</span></div>
+            <div class="endpoint"><span class="method m-get">GET</span><span class="ep-path">/api/models</span></div>
+            <div class="endpoint"><span class="method m-get">GET</span><span class="ep-path">/api/logs/stream</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pipeline title + token badge -->
+    <div class="pipeline-bar">
+      <div class="pipeline-title">
+        🔗 LangGraph — 3-Tier Analysis Pipeline
+      </div>
+      <div class="badge">✂️ ~85% token reduction vs. v1</div>
+    </div>
+
+    <!-- Pipeline flow -->
+    <div class="pipeline">
+      <div class="pipe-node tier1">
+        <div class="icon">📂</div>
+        <div class="name">index_files</div>
+        <div class="desc">ChromaDB<br/>per-session<br/>collection</div>
+      </div>
+      <div class="pipe-arrow">›</div>
+      <div class="pipe-node tier1">
+        <div class="icon">🗃️</div>
+        <div class="name">prepare_context</div>
+        <div class="desc">compact file index<br/>50 chars/file<br/>config-driven RAG</div>
+      </div>
+      <div class="pipe-arrow">›</div>
+      <div class="pipe-node tier2 pipe-accent">
+        <div class="icon">🔍</div>
+        <div class="name">code-analysis</div>
+        <div class="desc">Foundation<br/>PART 1 machine block<br/>→ state field<br/>PART 2 human report</div>
+      </div>
+      <div class="pipe-arrow">›</div>
+      <div class="pipe-node tier3 pipe-wide">
+        <div class="icon">🤖</div>
+        <div class="name">Specialist Agents</div>
+        <div class="desc">each receives foundation<br/>briefing + multi-query RAG<br/>results (5q × 5r deduped)</div>
+      </div>
+      <div class="pipe-arrow">›</div>
+      <div class="pipe-node tier1">
+        <div class="icon">📄</div>
+        <div class="name">combine +<br/>generate</div>
+        <div class="desc">merge markdown<br/>→ .docx / .md</div>
+      </div>
+    </div>
+
+    <!-- Approach 2 + 4 explanation -->
+    <div class="two-col">
+      <div class="panel green">
+        <div class="panel-header">📐 Approach 2 — Semantic Clustering</div>
+        <div class="panel-body">
+          <div class="sub-green">Multi-Query ChromaDB RAG</div>
+          <div class="info-170-mt4">
+            Each agent fires <strong class="c-green">5 focused domain queries</strong><br/>
+            × 5 results per query<br/>
+            → deduplicated by path:chunk_index<br/>
+            → capped by <span class="c-green">cloud_agent_chunks</span> config<br/>
+            <br/>
+            vs. v1: 1 query · n_results=20 · hardcoded
+          </div>
+          <div class="divider"></div>
+          <div class="sub-dkgrn">prepare_context:</div>
+          <div class="info-160">
+            Old: 400 chars × 341 files = <span class="c-red">136K chars</span><br/>
+            New: 50 chars × 341 files = <span class="c-green">17K chars</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel purple">
+        <div class="panel-header">⚡ Approach 4 — ReAct Tool Calling</div>
+        <div class="panel-body">
+          <div class="sub-purple">LLM-Driven File Reading</div>
+          <div class="info-170-mt4">
+            Agents in <span class="c-lilac">settings.react_agents</span> get<br/>
+            <strong class="c-lit">tool-binding</strong> instead of fixed context<br/>
+            LLM decides which files to read<br/>
+            Max 15 ReAct iterations per agent
+          </div>
+          <div class="divider"></div>
+          <div class="label">Enabled for</div>
+          <div class="chip-row">
+            <span class="chip chip-purple">🏗️ architecture</span>
+            <span class="chip chip-purple">🔒 security</span>
+          </div>
+          <div class="label label-mt6">Available Tools</div>
+          <div class="chip-row">
+            <span class="chip chip-slate">list_files</span>
+            <span class="chip chip-slate">read_file_skeleton</span>
+            <span class="chip chip-slate">read_file</span>
+            <span class="chip chip-slate">search_code</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Agent Grid -->
+    <div class="panel slate">
+      <div class="panel-header">🤖 12 Specialist Agents</div>
+      <div class="panel-body">
+        <div class="agent-grid">
+          <div class="agent-card react-agent">
+            <div class="a-icon">🏗️</div>
+            <div class="a-name">architecture<br/><span class="tag-react">ReAct</span></div>
+          </div>
+          <div class="agent-card">
+            <div class="a-icon">🔍</div>
+            <div class="a-name">code-analysis<br/><span class="tag-found">foundation</span></div>
+          </div>
+          <div class="agent-card">
+            <div class="a-icon">🔧</div>
+            <div class="a-name">refactoring</div>
+          </div>
+          <div class="agent-card">
+            <div class="a-icon">⚡</div>
+            <div class="a-name">code-generation</div>
+          </div>
+          <div class="agent-card">
+            <div class="a-icon">📋</div>
+            <div class="a-name">business-rules</div>
+          </div>
+          <div class="agent-card react-agent">
+            <div class="a-icon">🔒</div>
+            <div class="a-name">security<br/><span class="tag-react">ReAct</span></div>
+          </div>
+          <div class="agent-card">
+            <div class="a-icon">🚀</div>
+            <div class="a-name">devops</div>
+          </div>
+          <div class="agent-card">
+            <div class="a-icon">📚</div>
+            <div class="a-name">documentation</div>
+          </div>
+          <div class="agent-card">
+            <div class="a-icon">✅</div>
+            <div class="a-name">testing</div>
+          </div>
+          <div class="agent-card">
+            <div class="a-icon">🗄️</div>
+            <div class="a-name">data-migration</div>
+          </div>
+          <div class="agent-card">
+            <div class="a-icon">🎨</div>
+            <div class="a-name">ui-ux</div>
+          </div>
+          <div class="agent-card">
+            <div class="a-icon">🔗</div>
+            <div class="a-name">integration</div>
+          </div>
+        </div>
+        <div class="agent-legend">
+          <span>🟣 <span class="c-lit">ReAct tool-calling</span></span>
+          <span>🟢 <span class="c-green">Always-runs foundation</span></span>
+          <span>⬜ Standard single-shot</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Other Graphs -->
+    <div class="two-col">
+      <div class="panel teal">
+        <div class="panel-header">💬 chat_graph.py</div>
+        <div class="panel-body">
+          <div class="sub-teal">
+            Multi-turn RAG chat<br/>
+            ChromaDB context retrieval<br/>
+            SSE token-by-token streaming
+          </div>
+        </div>
+      </div>
+      <div class="panel rose">
+        <div class="panel-header">↔️ diff_graph.py</div>
+        <div class="panel-body">
+          <div class="sub-rose">
+            Original vs Modernized<br/>
+            Side-by-side diff viewer<br/>
+            Change summary generation
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end center col -->
+
+  <!-- ═══════ RIGHT COLUMN ═══════ -->
+  <div class="side-col">
+
+    <!-- LLM Layer -->
+    <div class="panel amber">
+      <div class="panel-header">🧠 core/llm.py — LLM Factory</div>
+      <div class="panel-body">
+        <div class="label">Providers</div>
+        <div class="sub-amber1">☁️ Groq Cloud</div>
+        <div class="info-150">llama-3.3-70b-versatile<br/>gemini-2.0-flash (Google)</div>
+        <div class="sub-amber2">🖥️ Ollama Local</div>
+        <div class="info-150">mistral / custom model<br/>localhost:11434<br/>auto-start on Windows/Mac</div>
+        <div class="divider"></div>
+        <div class="label">Features</div>
+        <div class="chip-row">
+          <span class="chip chip-amber">Auto-fallback</span>
+          <span class="chip chip-amber">Retry logic</span>
+          <span class="chip chip-amber">Rate-limit detect</span>
+          <span class="chip chip-amber">Per-request override</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ChromaDB -->
+    <div class="panel green">
+      <div class="panel-header">🔎 core/chromadb_client.py</div>
+      <div class="panel-body">
+        <div class="sub-emerald">Vector Store (local)</div>
+        <div class="info-160-mt4">
+          Per-session collection<br/>
+          HuggingFace / sentence-transformers<br/>
+          chroma_data/ on disk
+        </div>
+        <div class="divider"></div>
+        <div class="label">Functions</div>
+        <div class="mono-list">
+          index_files()<br/>
+          search_code()<br/>
+          <span class="c-green">search_code_multi_query()</span> <span class="c-emrld">NEW</span><br/>
+          store_analysis_result()<br/>
+          clear_session()
+        </div>
+        <div class="divider"></div>
+        <div class="info-xs">
+          multi_query: 5 queries<br/>
+          dedup by path:chunk_index<br/>
+          keep lowest distance hit
+        </div>
+      </div>
+    </div>
+
+    <!-- Prompts -->
+    <div class="panel purple">
+      <div class="panel-header">📝 core/prompts.py</div>
+      <div class="panel-body">
+        <div class="sub-purple">CODE_ANALYSIS_AGENT_SYSTEM</div>
+        <div class="info-160-mt4">
+          <span class="c-lilac">PART 1</span> — Foundation Block (≤2000w)<br/>
+          8 structured sections:<br/>
+          LAYER MAP · TECH INVENTORY<br/>
+          MIGRATION LANE MAP · DOMAIN MODEL<br/>
+          API SURFACE · ANTI-PATTERN INDEX<br/>
+          MIGRATION PHASES · RISK REGISTER<br/>
+          <br/>
+          <span class="c-lilac">PART 2</span> — Human Report<br/>
+          File analysis · Debt scorecard<br/>
+          Anti-pattern catalog
+        </div>
+        <div class="divider"></div>
+        <div class="sub-purple2">All 10 Specialist Prompts</div>
+        <div class="info-150">
+          + Foundation briefing preamble<br/>
+          "use directly, do not re-derive"
+        </div>
+      </div>
+    </div>
+
+    <!-- Tools -->
+    <div class="panel rose">
+      <div class="panel-header">🛠️ tools/</div>
+      <div class="panel-body">
+        <div class="label">analysis_tools.py <span class="c-red-new">NEW</span></div>
+        <div class="chip-row">
+          <span class="chip chip-rose">list_files</span>
+          <span class="chip chip-rose">read_file_skeleton</span>
+          <span class="chip chip-rose">read_file</span>
+          <span class="chip chip-rose">search_code</span>
+        </div>
+        <div class="tools-note">
+          Python AST skeleton · JS regex skeleton<br/>
+          Content cap 8000 chars<br/>
+          set_tool_context() per agent run
+        </div>
+        <div class="divider"></div>
+        <div class="chip-row">
+          <span class="chip chip-slate">file_processor.py</span>
+          <span class="chip chip-slate">document_generator.py</span>
+          <span class="chip chip-slate">code_executor.py</span>
+          <span class="chip chip-slate">deployment_helper.py</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Config -->
+    <div class="panel slate">
+      <div class="panel-header">⚙️ config.py</div>
+      <div class="panel-body">
+        <div class="config-text">
+          llm_provider: groq | ollama<br/>
+          groq_model<br/>
+          gemini_model<br/>
+          cloud_shared_chunks: 10<br/>
+          cloud_agent_chunks: 8<br/>
+          local_shared_chunks: 30<br/>
+          local_agent_chunks: 25<br/>
+          <span class="c-green">react_agents: [arch, sec]</span> <span class="c-emrld">NEW</span><br/>
+          auto_generate_docx: false
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end right col -->
+</div><!-- end main layout -->
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     v2 panel — Claude Code CLI runner module map (NEW, 2026-04-21)
+     ═══════════════════════════════════════════════════════════════════════ -->
+<section style="max-width:1600px;margin:24px auto;padding:22px 26px;border-radius:14px;
+                background:linear-gradient(180deg,#FFFBEB 0%,#FEF3C7 100%);
+                border:2px solid #F59E0B;color:#78350F;
+                font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+  <h2 style="margin:0 0 8px;font-size:20px;color:#B45309;display:flex;align-items:center;gap:10px;">
+    <span style="background:#F59E0B;color:#FEF3C7;padding:3px 10px;border-radius:5px;font-size:12px;font-weight:700;letter-spacing:0.05em;">v2</span>
+    Claude Code CLI Runner &mdash; module map
+  </h2>
+  <p style="margin:0 0 16px;font-size:13px;line-height:1.55;">
+    The modules below replace the central column&apos;s LangGraph + 4-provider pipeline when the user hits
+    <code>/api/analyze-v2</code> or <code>/api/chat</code>. Each agent runs as a <code>claude -p</code> subprocess under the
+    Claude Code Max subscription &mdash; no API keys consumed on the happy path. The v1 pipeline remains active as a fallback.
+  </p>
+
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;">
+
+    <div style="background:#fff;border:1px solid #F59E0B;border-radius:10px;padding:14px;">
+      <div style="font-size:13px;font-weight:700;color:#B45309;margin-bottom:4px;">🚀 Runner (subprocess)</div>
+      <div style="font-family:ui-monospace,monospace;font-size:11px;color:#92400E;margin-bottom:6px;">agents/runner.py</div>
+      <div style="font-size:12px;color:#78350F;line-height:1.5;">
+        Threaded <code>subprocess.Popen</code> pumps stream-json lines via <code>loop.call_soon_threadsafe</code>.
+        Works on both Selector &amp; Proactor loops. Windows <code>.cmd</code> shim bypassed via <code>node.exe cli.js</code>.
+        3-attempt transient retry; <code>CREATE_NO_WINDOW</code>.
+      </div>
+    </div>
+
+    <div style="background:#fff;border:1px solid #F59E0B;border-radius:10px;padding:14px;">
+      <div style="font-size:13px;font-weight:700;color:#B45309;margin-bottom:4px;">🧭 Supervisor (DAG waves)</div>
+      <div style="font-family:ui-monospace,monospace;font-size:11px;color:#92400E;margin-bottom:6px;">agents/supervisor.py</div>
+      <div style="font-size:12px;color:#78350F;line-height:1.5;">
+        <code>compute_waves()</code> topological sort over <code>AgentSpec.upstream</code>.
+        Wave 0 = 9 parallel agents · Wave 1 = code-generation · Wave 2 = testing + ui-ux.
+        Per-<code>cwd</code> lock serialises writers.
+      </div>
+    </div>
+
+    <div style="background:#fff;border:1px solid #F59E0B;border-radius:10px;padding:14px;">
+      <div style="font-size:13px;font-weight:700;color:#B45309;margin-bottom:4px;">🔍 Discovery + briefs</div>
+      <div style="font-family:ui-monospace,monospace;font-size:11px;color:#92400E;margin-bottom:6px;">agents/runner.run_discovery · prompts.split_discovery_into_briefs</div>
+      <div style="font-size:12px;color:#78350F;line-height:1.5;">
+        One cheap Haiku pass writes <code>context/digest.md</code> + <code>brief_&lt;agent&gt;.md</code> so each specialist skips
+        re-exploration. ~2 min on a 300+ file monolith.
+      </div>
+    </div>
+
+    <div style="background:#fff;border:1px solid #F59E0B;border-radius:10px;padding:14px;">
+      <div style="font-size:13px;font-weight:700;color:#B45309;margin-bottom:4px;">📁 Session adapter</div>
+      <div style="font-family:ui-monospace,monospace;font-size:11px;color:#92400E;margin-bottom:6px;">agents/session_adapter.py</div>
+      <div style="font-size:12px;color:#78350F;line-height:1.5;">
+        Mirrors <code>uploads/{sid}/files/</code> &rarr; <code>source/</code> &middot; detects project root
+        (<code>package.json</code>, <code>pom.xml</code>, <code>composer.json</code>, <code>.csproj</code>, <code>go.mod</code>, ...) &middot;
+        creates <code>converted/</code> + <code>context/</code>.
+      </div>
+    </div>
+
+    <div style="background:#fff;border:1px solid #F59E0B;border-radius:10px;padding:14px;">
+      <div style="font-size:13px;font-weight:700;color:#B45309;margin-bottom:4px;">💬 Chat bridge</div>
+      <div style="font-family:ui-monospace,monospace;font-size:11px;color:#92400E;margin-bottom:6px;">agents/chat_bridge.py</div>
+      <div style="font-size:12px;color:#78350F;line-height:1.5;">
+        <code>claude -p --output-format json</code> with Read/Glob/Grep allowed &middot; Write/Edit/Bash denied.
+        Never raises &rarr; <code>/api/chat</code> falls back silently to v1 chat_graph on error.
+      </div>
+    </div>
+
+    <div style="background:#fff;border:1px solid #F59E0B;border-radius:10px;padding:14px;">
+      <div style="font-size:13px;font-weight:700;color:#B45309;margin-bottom:4px;">⚙️ Registry &amp; prompts</div>
+      <div style="font-family:ui-monospace,monospace;font-size:11px;color:#92400E;margin-bottom:6px;">agents/config.py · agents/prompts.py</div>
+      <div style="font-size:12px;color:#78350F;line-height:1.5;">
+        12-agent <code>AGENT_REGISTRY</code> with tier + upstream deps; tier&rarr;model map
+        (<code>HEAVY_MODEL</code>=sonnet-4-6, <code>LIGHT_MODEL</code>=haiku-4-5). 24h default timeouts.
+      </div>
+    </div>
+
+    <div style="background:#fff;border:1px solid #F59E0B;border-radius:10px;padding:14px;">
+      <div style="font-size:13px;font-weight:700;color:#B45309;margin-bottom:4px;">💰 Cost ledger</div>
+      <div style="font-family:ui-monospace,monospace;font-size:11px;color:#92400E;margin-bottom:6px;">core/cost_tracker.py + model_pricing.yaml</div>
+      <div style="font-size:12px;color:#78350F;line-height:1.5;">
+        Per-call SQLite ledger (<code>data/cost_tracking.db</code>) with openpyxl 5-sheet workbook. Subscription absorbs actual spend;
+        ledger shows API-equivalent virtual cost.
+      </div>
+    </div>
+
+    <div style="background:#fff;border:1px solid #F59E0B;border-radius:10px;padding:14px;">
+      <div style="font-size:13px;font-weight:700;color:#B45309;margin-bottom:4px;">📋 Report combiner</div>
+      <div style="font-family:ui-monospace,monospace;font-size:11px;color:#92400E;margin-bottom:6px;">agents/v2_to_report_data.py</div>
+      <div style="font-size:12px;color:#78350F;line-height:1.5;">
+        Concatenates per-agent markdown results into the single-string shape
+        <code>tools/document_generator.generate_docx</code> consumes. No export-pipeline changes required.
+      </div>
+    </div>
+
+    <div style="background:#fff;border:1px solid #F59E0B;border-radius:10px;padding:14px;">
+      <div style="font-size:13px;font-weight:700;color:#B45309;margin-bottom:4px;">🔌 MCP trace server</div>
+      <div style="font-family:ui-monospace,monospace;font-size:11px;color:#92400E;margin-bottom:6px;">mcp_server/trace_server.py</div>
+      <div style="font-size:12px;color:#78350F;line-height:1.5;">
+        Local stdio MCP server exposing trace SQLite read-only. Register via
+        <code>claude mcp add appnova-traces</code> so Claude Code CLI sessions query backend telemetry directly.
+      </div>
+    </div>
+
+  </div>
+
+  <div style="margin-top:14px;padding:10px 14px;background:rgba(245,158,11,0.12);border-left:3px solid #F59E0B;border-radius:6px;font-size:12px;line-height:1.55;">
+    <strong>Event envelope</strong> &mdash; v2 SSE emits rich <code>agent_start</code> / <code>assistant</code> (with tool_calls) /
+    <code>tool_result</code> / <code>agent_complete</code> events alongside the legacy <code>{type: start|complete|error, agent_id}</code> shape,
+    so the existing <code>api.ts</code> frontend works unchanged (single URL flip from <code>/api/analyze/stream</code> &rarr; <code>/api/analyze-v2</code>).
+    &middot; Full port log + 9 hotfixes: <a href="changes.md" style="color:#B45309;font-weight:600;">changes.md (2026-04-21)</a>.
+  </div>
+</section>
+
+<!-- ═══════════════════════ BOTTOM ROW ═══════════════════════ -->
+<div class="bottom-row">
+
+  <!-- External APIs -->
+  <div class="panel amber">
+    <div class="panel-header">☁️ External APIs</div>
+    <div class="panel-body">
+      <div class="ext-text">
+        <span class="c-amber">🤖</span> <span class="c-slate">Groq Cloud API</span><br/>
+        <span class="c-amber">🔷</span> <span class="c-slate">Google Gemini API</span><br/>
+        <span class="c-amber">🖥️</span> <span class="c-slate">Ollama localhost:11434</span><br/>
+        <span class="c-amber">🐙</span> <span class="c-slate">GitHub raw content API</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Storage -->
+  <div class="panel green">
+    <div class="panel-header">💾 Storage</div>
+    <div class="panel-body">
+      <div class="sub-green">ChromaDB</div>
+      <div class="info-150">chroma_data/ — embeddings<br/>per session_id collection</div>
+      <div class="divider"></div>
+      <div class="sub-green">File System</div>
+      <div class="info-150">exports/ → .docx / .md<br/>logs/ → appnova_app.log<br/>(loguru, 10 MB rotation)</div>
+    </div>
+  </div>
+
+  <!-- New files summary -->
+  <div class="panel purple">
+    <div class="panel-header">🆕 New / Modified (this session)</div>
+    <div class="panel-body">
+      <div class="files-list">
+        <span class="c-green">+</span> <span class="c-lit">tools/analysis_tools.py</span><br/>
+        <span class="c-tilde">~</span> <span class="c-slate">graphs/analysis_graph.py</span><br/>
+        <span class="c-tilde">~</span> <span class="c-slate">graphs/state.py</span><br/>
+        <span class="c-tilde">~</span> <span class="c-slate">core/chromadb_client.py</span><br/>
+        <span class="c-tilde">~</span> <span class="c-slate">core/prompts.py</span><br/>
+        <span class="c-tilde">~</span> <span class="c-slate">config.py</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Key metrics -->
+  <div class="panel teal">
+    <div class="panel-header">📊 Key Improvements</div>
+    <div class="panel-body">
+      <div class="metric-title">Token Usage</div>
+      <div class="info-150">136K → 17K chars / run<br/><span class="c-green">~85% reduction</span></div>
+      <div class="divider"></div>
+      <div class="metric-title">RAG Recall</div>
+      <div class="info-150">1 query → 5 queries<br/><span class="c-green">5× more coverage</span></div>
+      <div class="divider"></div>
+      <div class="metric-title">Agent Context</div>
+      <div class="info-150">Isolated → Shared foundation<br/><span class="c-green">10 agents share analysis</span></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════ LEGEND ═══════════════════════ -->
+<div class="legend">
+  <div class="legend-item"><div class="legend-line ll-blue"></div>Frontend → API</div>
+  <div class="legend-item"><div class="legend-line ll-orange"></div>API → LangGraph</div>
+  <div class="legend-item"><div class="legend-line ll-purple"></div>State field flow</div>
+  <div class="legend-item"><div class="legend-line ll-green"></div>New in this session</div>
+  <div class="legend-item"><div class="legend-line ll-dashed"></div>ReAct tool loop</div>
+  <div class="legend-item"><span class="legend-note">All 6 files · 0 errors · April 2026</span></div>
+</div>
+
+</body>
+</html>

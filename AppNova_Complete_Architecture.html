@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AppNova AI - Complete Architecture Diagram</title>
+<style>
+  :root {
+    --bg: #0a0e17;
+    --surface: #111827;
+    --card: #1a2236;
+    --card2: #1f2b42;
+    --border: #2a3654;
+    --accent: #3b82f6;
+    --accent2: #8b5cf6;
+    --accent3: #06b6d4;
+    --green: #22c55e;
+    --orange: #f59e0b;
+    --red: #ef4444;
+    --pink: #ec4899;
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+    --dim: #64748b;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: 'Inter', -apple-system, sans-serif; padding: 2rem; }
+  h1 { text-align: center; font-size: 2rem; font-weight: 800; margin-bottom: 0.3rem; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .subtitle { text-align: center; color: var(--muted); font-size: 0.85rem; margin-bottom: 2.5rem; }
+  .diagram-grid { display: grid; grid-template-columns: 1fr; gap: 2rem; max-width: 1200px; margin: 0 auto; }
+
+  /* Layer card */
+  .layer { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 1.5rem; position: relative; overflow: hidden; }
+  .layer::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+  .layer-1::before { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
+  .layer-2::before { background: linear-gradient(90deg, #8b5cf6, #a78bfa); }
+  .layer-3::before { background: linear-gradient(90deg, #22c55e, #4ade80); }
+  .layer-4::before { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+  .layer-5::before { background: linear-gradient(90deg, #06b6d4, #22d3ee); }
+  .layer-6::before { background: linear-gradient(90deg, #ec4899, #f472b6); }
+  .layer-7::before { background: linear-gradient(90deg, #ef4444, #f87171); }
+
+  .layer-header { display: flex; align-items: center; gap: 0.8rem; margin-bottom: 1rem; }
+  .layer-num { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.8rem; color: #fff; flex-shrink: 0; }
+  .layer-1 .layer-num { background: var(--accent); }
+  .layer-2 .layer-num { background: var(--accent2); }
+  .layer-3 .layer-num { background: var(--green); }
+  .layer-4 .layer-num { background: var(--orange); }
+  .layer-5 .layer-num { background: var(--accent3); }
+  .layer-6 .layer-num { background: var(--pink); }
+  .layer-7 .layer-num { background: var(--red); }
+  .layer-title { font-size: 1.1rem; font-weight: 700; }
+  .layer-tag { font-size: 0.65rem; color: var(--muted); background: var(--card); padding: 0.15rem 0.5rem; border-radius: 4px; margin-left: auto; }
+  .layer-desc { font-size: 0.78rem; color: var(--muted); margin-bottom: 1rem; line-height: 1.5; }
+
+  /* Component boxes inside layers */
+  .components { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 0.6rem; }
+  .comp { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 0.7rem; }
+  .comp-name { font-size: 0.75rem; font-weight: 700; color: var(--text); margin-bottom: 0.2rem; }
+  .comp-file { font-size: 0.6rem; color: var(--accent3); font-family: 'JetBrains Mono', monospace; }
+  .comp-desc { font-size: 0.62rem; color: var(--dim); margin-top: 0.2rem; line-height: 1.4; }
+
+  /* Flow arrows */
+  .flow { display: flex; align-items: center; justify-content: center; padding: 0.5rem 0; }
+  .flow-arrow { color: var(--accent); font-size: 1.5rem; animation: pulse 2s ease-in-out infinite; }
+  @keyframes pulse { 0%,100% { opacity: 0.4; } 50% { opacity: 1; } }
+
+  /* Agent grid */
+  .agent-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.5rem; }
+  .agent { background: var(--card2); border: 1px solid var(--border); border-radius: 8px; padding: 0.5rem 0.6rem; text-align: center; }
+  .agent-icon { font-size: 1.2rem; }
+  .agent-name { font-size: 0.65rem; font-weight: 700; color: var(--text); margin-top: 0.15rem; }
+  .agent-model { font-size: 0.55rem; color: var(--accent); }
+
+  /* Hook table */
+  .hook-table { width: 100%; border-collapse: collapse; }
+  .hook-table th { font-size: 0.65rem; color: var(--accent); text-align: left; padding: 0.4rem 0.6rem; border-bottom: 1px solid var(--border); }
+  .hook-table td { font-size: 0.62rem; color: var(--muted); padding: 0.35rem 0.6rem; border-bottom: 1px solid rgba(42,54,84,0.4); }
+  .hook-event { color: var(--green); font-weight: 600; font-family: monospace; }
+
+  /* Slash commands */
+  .cmd-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.4rem; }
+  .cmd { background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 0.4rem 0.6rem; display: flex; align-items: center; gap: 0.5rem; }
+  .cmd code { font-size: 0.68rem; color: var(--accent); font-weight: 700; font-family: monospace; min-width: 100px; }
+  .cmd span { font-size: 0.6rem; color: var(--dim); }
+
+  /* Provider cascade */
+  .cascade { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+  .cascade-item { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 0.5rem 0.8rem; text-align: center; }
+  .cascade-item.primary { border-color: var(--accent); box-shadow: 0 0 12px rgba(59,130,246,0.15); }
+  .cascade-label { font-size: 0.55rem; color: var(--dim); text-transform: uppercase; letter-spacing: 0.05em; }
+  .cascade-name { font-size: 0.8rem; font-weight: 700; color: var(--text); }
+  .cascade-detail { font-size: 0.55rem; color: var(--muted); }
+  .cascade-arrow { color: var(--dim); font-size: 1.2rem; }
+
+  /* Two-col */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  @media (max-width: 700px) { .two-col { grid-template-columns: 1fr; } }
+
+  /* Pipeline */
+  .pipeline { display: flex; flex-direction: column; gap: 0.3rem; }
+  .pipe-step { display: flex; align-items: center; gap: 0.5rem; }
+  .pipe-num { width: 22px; height: 22px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 0.6rem; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .pipe-text { font-size: 0.7rem; color: var(--text); }
+  .pipe-file { font-size: 0.58rem; color: var(--accent3); font-family: monospace; }
+
+  .section-label { font-size: 0.7rem; font-weight: 700; color: var(--accent2); margin: 0.8rem 0 0.4rem; text-transform: uppercase; letter-spacing: 0.05em; }
+</style>
+</head>
+<body>
+
+<h1>AppNova AI</h1>
+<p class="subtitle">Complete System Architecture - 7 Layers + 30 Agents + 6 Phases &middot; <strong style="color:#F59E0B;">+ v2 CLI runner (2026-04-21)</strong></p>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     v2 banner — Claude Code CLI runner (2026-04-21)
+     ═══════════════════════════════════════════════════════════════════════ -->
+<section style="max-width:1400px;margin:0 auto 1.5rem;padding:1rem 1.4rem;border-radius:12px;
+                background:linear-gradient(135deg,#78350F 0%,#B45309 100%);
+                border:1px solid #F59E0B;color:#FEF3C7;
+                font-size:0.92rem;line-height:1.55;box-shadow:0 4px 12px rgba(0,0,0,0.3);">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;flex-wrap:wrap;">
+    <span style="background:#F59E0B;color:#78350F;padding:2px 10px;border-radius:4px;
+                 font-size:0.72rem;font-weight:700;letter-spacing:0.05em;">NEW &middot; v2</span>
+    <strong style="font-size:1.02rem;color:#FEF3C7;">
+      Claude Code CLI runner &middot; subscription primary, LLM cascade fallback
+    </strong>
+  </div>
+  <p style="margin:0 0 6px;">
+    <code style="background:rgba(254,243,199,0.15);padding:2px 6px;border-radius:3px;">/api/analyze-v2</code>
+    and <code style="background:rgba(254,243,199,0.15);padding:2px 6px;border-radius:3px;">/api/chat</code>
+    run each agent as a <code style="background:rgba(254,243,199,0.15);padding:2px 6px;border-radius:3px;">claude -p</code>
+    subprocess under your Claude Code Max subscription. The 7-layer architecture below still describes the v1 (LangGraph) path
+    &mdash; it&apos;s the automatic fallback when the v2 subprocess path fails. See <strong>Layer 8</strong> at the bottom for
+    the v2 runner details, or <a href="changes.md" style="color:#FCD34D;font-weight:600;">changes.md (2026-04-21)</a>
+    for the full port log + 9 hotfixes.
+  </p>
+</section>
+
+<div class="diagram-grid">
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- LAYER 1: PROJECT BRAIN -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="layer layer-1">
+  <div class="layer-header">
+    <div class="layer-num">1</div>
+    <div class="layer-title">Project Brain (Memory Layer)</div>
+    <span class="layer-tag">Always loaded</span>
+  </div>
+  <div class="layer-desc">Auto-generated PROJECT.md per session. Contains detected source stack, target stack, domain, business rules, and analysis history. Injected into every agent prompt and chat context.</div>
+  <div class="components">
+    <div class="comp">
+      <div class="comp-name">PROJECT.md</div>
+      <div class="comp-file">uploads/{session}/PROJECT.md</div>
+      <div class="comp-desc">Project memory file. Auto-generated after code-analysis. Editable by user. Persists across sessions.</div>
+    </div>
+    <div class="comp">
+      <div class="comp-name">Brain Generator</div>
+      <div class="comp-file">tools/project_brain.py</div>
+      <div class="comp-desc">Extracts domain, stack, business rules from analysis output. Updates history on each run.</div>
+    </div>
+    <div class="comp">
+      <div class="comp-name">Brain API</div>
+      <div class="comp-file">GET/PUT /api/brain/{id}</div>
+      <div class="comp-desc">Load, edit notes, regenerate. Frontend sidebar shows detected stack + edit button.</div>
+    </div>
+    <div class="comp">
+      <div class="comp-name">Context Injection</div>
+      <div class="comp-file">main.py (agent loop)</div>
+      <div class="comp-desc">Appended to every agent system prompt as ## PROJECT CONTEXT section.</div>
+    </div>
+  </div>
+</div>
+
+<div class="flow"><span class="flow-arrow">&#x25BC;</span></div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- LAYER 2: SKILLS -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="layer layer-2">
+  <div class="layer-header">
+    <div class="layer-num">2</div>
+    <div class="layer-title">Skills (Knowledge Layer)</div>
+    <span class="layer-tag">13 built-in + custom</span>
+  </div>
+  <div class="layer-desc">Modular agent prompts stored as .md files with frontmatter metadata. Each skill defines a specialist persona with tools, model preference, output structure, and quality requirements.</div>
+  <div class="agent-grid">
+    <div class="agent"><div class="agent-icon">&#x1F50D;</div><div class="agent-name">Code Analysis</div><div class="agent-model">Sonnet</div></div>
+    <div class="agent"><div class="agent-icon">&#x1F3D7;</div><div class="agent-name">Architecture</div><div class="agent-model">Sonnet</div></div>
+    <div class="agent"><div class="agent-icon">&#x1F5FA;</div><div class="agent-name">Migration Planner</div><div class="agent-model">Sonnet</div></div>
+    <div class="agent"><div class="agent-icon">&#x1F527;</div><div class="agent-name">Refactoring</div><div class="agent-model">Gemini</div></div>
+    <div class="agent"><div class="agent-icon">&#x26A1;</div><div class="agent-name">Code Generation</div><div class="agent-model">Gemini</div></div>
+    <div class="agent"><div class="agent-icon">&#x1F512;</div><div class="agent-name">Security</div><div class="agent-model">Haiku</div></div>
+    <div class="agent"><div class="agent-icon">&#x2705;</div><div class="agent-name">Testing</div><div class="agent-model">Haiku</div></div>
+    <div class="agent"><div class="agent-icon">&#x1F680;</div><div class="agent-name">DevOps</div><div class="agent-model">Haiku</div></div>
+    <div class="agent"><div class="agent-icon">&#x1F4DA;</div><div class="agent-name">Documentation</div><div class="agent-model">Haiku</div></div>
+    <div class="agent"><div class="agent-icon">&#x1F5C4;</div><div class="agent-name">Data Migration</div><div class="agent-model">Haiku</div></div>
+    <div class="agent"><div class="agent-icon">&#x1F3A8;</div><div class="agent-name">UI/UX</div><div class="agent-model">Haiku</div></div>
+    <div class="agent"><div class="agent-icon">&#x1F4CB;</div><div class="agent-name">Business Rules</div><div class="agent-model">Haiku</div></div>
+    <div class="agent"><div class="agent-icon">&#x1F517;</div><div class="agent-name">Integration</div><div class="agent-model">Haiku</div></div>
+  </div>
+  <div class="components" style="margin-top: 0.8rem;">
+    <div class="comp">
+      <div class="comp-name">Skill Loader</div>
+      <div class="comp-file">core/skill_loader.py</div>
+      <div class="comp-desc">Reads .md files with YAML frontmatter. Falls back to prompts.py. Custom skills override built-in.</div>
+    </div>
+    <div class="comp">
+      <div class="comp-name">Skills API</div>
+      <div class="comp-file">GET/POST /api/skills</div>
+      <div class="comp-desc">List, create, and read skill definitions. Custom skills saved to skills/custom/.</div>
+    </div>
+  </div>
+</div>
+
+<div class="flow"><span class="flow-arrow">&#x25BC;</span></div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- LAYER 3: HOOKS -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="layer layer-3">
+  <div class="layer-header">
+    <div class="layer-num">3</div>
+    <div class="layer-title">Hooks (Guardrail Layer)</div>
+    <span class="layer-tag">Deterministic, not AI</span>
+  </div>
+  <div class="layer-desc">Pre/post event automation that runs at key pipeline points. Built-in hooks handle validation, brain updates, auditing, and auto-export. Custom hooks can be registered via the API.</div>
+  <table class="hook-table">
+    <thead><tr><th>Event</th><th>Hook</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td class="hook-event">post_agent</td><td>validate_content_depth</td><td>Checks concept mapping rows (20+), risk rows (10+), phase rows (8+), word count (3000+)</td></tr>
+      <tr><td class="hook-event">post_agent</td><td>generate_project_brain</td><td>Auto-generates/updates PROJECT.md after code-analysis completes</td></tr>
+      <tr><td class="hook-event">post_agent</td><td>log_audit_trail</td><td>Logs agent_id, session_id, result length with timestamp</td></tr>
+      <tr><td class="hook-event">post_analysis</td><td>update_brain_history</td><td>Appends "Analysis completed (N agents)" to PROJECT.md history</td></tr>
+      <tr><td class="hook-event">post_analysis</td><td>auto_export_docx</td><td>Auto-generates DOCX when analysis completes (if enabled)</td></tr>
+      <tr><td class="hook-event">pre_analysis</td><td><em>(extensible)</em></td><td>Validate session, check quota, notify team</td></tr>
+      <tr><td class="hook-event">on_refine</td><td><em>(extensible)</em></td><td>Track refinement history, A/B compare versions</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="flow"><span class="flow-arrow">&#x25BC;</span></div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- LAYER 4: AGENT EXECUTION ENGINE -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="layer layer-4">
+  <div class="layer-header">
+    <div class="layer-num">4</div>
+    <div class="layer-title">Agent Execution Engine (Orchestration Layer)</div>
+    <span class="layer-tag">LangGraph State Machine</span>
+  </div>
+  <div class="layer-desc">3-tier LangGraph pipeline: Foundation Analysis first, then parallel specialist agents, then synthesis. Agents have self-correction loops and content depth expansion.</div>
+  <div class="two-col">
+    <div>
+      <div class="section-label">Execution Pipeline</div>
+      <div class="pipeline">
+        <div class="pipe-step"><div class="pipe-num">1</div><div><div class="pipe-text">Index uploaded files into ChromaDB</div><div class="pipe-file">index_files_node</div></div></div>
+        <div class="pipe-step"><div class="pipe-num">2</div><div><div class="pipe-text">Build compact file index (~17K chars)</div><div class="pipe-file">prepare_context_node</div></div></div>
+        <div class="pipe-step"><div class="pipe-num">3</div><div><div class="pipe-text">Static analysis: imports, symbols, deps</div><div class="pipe-file">parse_repo_node (repo_parser.py)</div></div></div>
+        <div class="pipe-step"><div class="pipe-num">4</div><div><div class="pipe-text">LLM-batch codebase context (Map-Reduce)</div><div class="pipe-file">ingest_context_node (context_ingester.py)</div></div></div>
+        <div class="pipe-step"><div class="pipe-num">5</div><div><div class="pipe-text">Foundation: code-analysis (ALWAYS FIRST)</div><div class="pipe-file">Produces Foundation Context Block</div></div></div>
+        <div class="pipe-step"><div class="pipe-num">6</div><div><div class="pipe-text">Parallel specialist agents (1-12)</div><div class="pipe-file">Each gets Foundation Block as briefing</div></div></div>
+        <div class="pipe-step"><div class="pipe-num">7</div><div><div class="pipe-text">Self-correction + depth expansion</div><div class="pipe-file">validate_required_sections + validate_content_depth</div></div></div>
+        <div class="pipe-step"><div class="pipe-num">8</div><div><div class="pipe-text">Combine results + generate document</div><div class="pipe-file">combine_results_node + generate_document_node</div></div></div>
+      </div>
+    </div>
+    <div>
+      <div class="section-label">Foundation Context Block</div>
+      <div class="components" style="grid-template-columns: 1fr;">
+        <div class="comp"><div class="comp-name">LAYER MAP</div><div class="comp-desc">LAYER | file_path | responsibility</div></div>
+        <div class="comp"><div class="comp-name">TECHNOLOGY INVENTORY</div><div class="comp-desc">dependency | version | status | replacement</div></div>
+        <div class="comp"><div class="comp-name">MIGRATION LANE MAP</div><div class="comp-desc">source_file -> target_file | ACTION</div></div>
+        <div class="comp"><div class="comp-name">DOMAIN MODEL</div><div class="comp-desc">entity | fields | relationships | source</div></div>
+        <div class="comp"><div class="comp-name">API SURFACE</div><div class="comp-desc">METHOD /path | handler | auth | source</div></div>
+        <div class="comp"><div class="comp-name">ANTI-PATTERN INDEX</div><div class="comp-desc">pattern | severity | file | description</div></div>
+        <div class="comp"><div class="comp-name">MIGRATION PHASES</div><div class="comp-desc">phase | files | risk | prerequisite</div></div>
+        <div class="comp"><div class="comp-name">RISK REGISTER</div><div class="comp-desc">RISK-NN | description | severity | mitigation</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="flow"><span class="flow-arrow">&#x25BC;</span></div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- LAYER 5: LLM PROVIDER CASCADE -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="layer layer-5">
+  <div class="layer-header">
+    <div class="layer-num">5</div>
+    <div class="layer-title">LLM Provider Cascade (Resilience Layer)</div>
+    <span class="layer-tag">4 providers, 25+ keys</span>
+  </div>
+  <div class="layer-desc">Multi-provider fallback with per-provider key rotation, rate-limit cooldowns, and project-aware key grouping. Automatically cascades on failure.</div>
+  <div class="cascade">
+    <div class="cascade-item primary">
+      <div class="cascade-label">Primary</div>
+      <div class="cascade-name">Claude</div>
+      <div class="cascade-detail">Tier 2 | 1K RPM | $100/mo</div>
+      <div class="cascade-detail">Sonnet + Haiku | 4 keys</div>
+      <div class="cascade-detail">0.5s delay</div>
+    </div>
+    <div class="cascade-arrow">&#x2192;</div>
+    <div class="cascade-item">
+      <div class="cascade-label">Secondary</div>
+      <div class="cascade-name">Gemini</div>
+      <div class="cascade-detail">Free | 20 RPD | 1M ctx</div>
+      <div class="cascade-detail">Flash 2.5 | 9 keys (3 groups)</div>
+      <div class="cascade-detail">4.0s delay</div>
+    </div>
+    <div class="cascade-arrow">&#x2192;</div>
+    <div class="cascade-item">
+      <div class="cascade-label">Fallback</div>
+      <div class="cascade-name">Groq</div>
+      <div class="cascade-detail">Free | 30 RPM</div>
+      <div class="cascade-detail">Llama 3.3 70B | 11 keys</div>
+      <div class="cascade-detail">2.0s delay</div>
+    </div>
+    <div class="cascade-arrow">&#x2192;</div>
+    <div class="cascade-item">
+      <div class="cascade-label">Local</div>
+      <div class="cascade-name">Ollama</div>
+      <div class="cascade-detail">No limits | GPU</div>
+      <div class="cascade-detail">Qwen 32K context</div>
+      <div class="cascade-detail">No delay</div>
+    </div>
+  </div>
+</div>
+
+<div class="flow"><span class="flow-arrow">&#x25BC;</span></div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- LAYER 6: CHAT + SLASH COMMANDS -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="layer layer-6">
+  <div class="layer-header">
+    <div class="layer-num">6</div>
+    <div class="layer-title">Chat + Slash Commands (Interaction Layer)</div>
+    <span class="layer-tag">Intent detection + CRAG</span>
+  </div>
+  <div class="layer-desc">Multi-turn chat with Corrective RAG, slash command parser, auto-intent detection (agent, export, refine, full analysis), and smart follow-up suggestions.</div>
+  <div class="two-col">
+    <div>
+      <div class="section-label">Slash Commands</div>
+      <div class="cmd-grid" style="grid-template-columns: 1fr;">
+        <div class="cmd"><code>/analyze</code><span>Full analysis with all agents</span></div>
+        <div class="cmd"><code>/analyze security</code><span>Run specific agent</span></div>
+        <div class="cmd"><code>/export docx</code><span>Export as Word document</span></div>
+        <div class="cmd"><code>/export pdf</code><span>Export as PDF</span></div>
+        <div class="cmd"><code>/refine architecture</code><span>Refine existing report</span></div>
+        <div class="cmd"><code>/brain</code><span>Show project memory</span></div>
+        <div class="cmd"><code>/skills</code><span>List available skills</span></div>
+        <div class="cmd"><code>/status</code><span>Session status</span></div>
+      </div>
+    </div>
+    <div>
+      <div class="section-label">Intent Detection</div>
+      <div class="components" style="grid-template-columns: 1fr;">
+        <div class="comp"><div class="comp-name">Slash Parser</div><div class="comp-desc">Priority 1: /command → direct action (no AI needed)</div></div>
+        <div class="comp"><div class="comp-name">Export Detector</div><div class="comp-desc">Priority 2: "download as docx" → generate + auto-download</div></div>
+        <div class="comp"><div class="comp-name">Refine Detector</div><div class="comp-desc">Priority 3: "add more detail to..." → fetch existing report + modify</div></div>
+        <div class="comp"><div class="comp-name">Agent Matcher</div><div class="comp-desc">Priority 4: regex patterns → run matching agent(s)</div></div>
+        <div class="comp"><div class="comp-name">Full Analysis</div><div class="comp-desc">"analyze everything" → run all 13 agents</div></div>
+        <div class="comp"><div class="comp-name">Follow-up Chips</div><div class="comp-desc">After agents complete: suggest next agent, export, full analysis</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="flow"><span class="flow-arrow">&#x25BC;</span></div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- LAYER 7: EXPORT + PRESENTATION -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="layer layer-7">
+  <div class="layer-header">
+    <div class="layer-num">7</div>
+    <div class="layer-title">Export + Presentation (Output Layer)</div>
+    <span class="layer-tag">DOCX + MD + PDF + Live UI</span>
+  </div>
+  <div class="layer-desc">Professional document generation with branded cover page, TOC, styled tables, code blocks, Mermaid diagrams (PNG), and page numbers. Plus a rich React-based live report viewer.</div>
+  <div class="components">
+    <div class="comp">
+      <div class="comp-name">DOCX Generator</div>
+      <div class="comp-file">tools/document_generator.py</div>
+      <div class="comp-desc">Cover page, TOC, blue table headers, alternating rows, Consolas code blocks, footer with page numbers</div>
+    </div>
+    <div class="comp">
+      <div class="comp-name">Mermaid Renderer</div>
+      <div class="comp-file">mmdc (mermaid-cli)</div>
+      <div class="comp-desc">Pre-renders Mermaid code to PNG, embeds as image in DOCX. Falls back to styled code block.</div>
+    </div>
+    <div class="comp">
+      <div class="comp-name">PDF Export</div>
+      <div class="comp-file">window.print() + @media print</div>
+      <div class="comp-desc">Browser print dialog with clean print CSS. Hides sidebar/nav/buttons, shows only report content.</div>
+    </div>
+    <div class="comp">
+      <div class="comp-name">Markdown Export</div>
+      <div class="comp-file">/api/export (format=markdown)</div>
+      <div class="comp-desc">Raw .md file with all agent results merged. Viewable in GitHub, VS Code, any markdown viewer.</div>
+    </div>
+    <div class="comp">
+      <div class="comp-name">Live Report Viewer</div>
+      <div class="comp-file">ReportView.tsx</div>
+      <div class="comp-desc">ReactMarkdown + remarkGfm, Mermaid SVG, code highlighting, scroll-spy nav, refine bar</div>
+    </div>
+    <div class="comp">
+      <div class="comp-name">Settings Panel</div>
+      <div class="comp-file">SettingsPanel.tsx</div>
+      <div class="comp-desc">Shows hooks, skills, slash commands. Per-session configuration UI.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- LAYER 8: v2 Claude Code CLI runner (NEW — 2026-04-21)                    -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div class="layer" style="border-color:#F59E0B;background:linear-gradient(180deg,rgba(245,158,11,0.08) 0%,rgba(180,83,9,0.04) 100%);">
+  <div class="layer-header">
+    <div class="layer-num" style="background:#F59E0B;color:#78350F;">8</div>
+    <div class="layer-title" style="color:#F59E0B;">v2 Claude Code CLI Runner (NEW)</div>
+    <span class="layer-tag" style="background:#F59E0B;color:#78350F;">subscription &middot; subprocess &middot; DAG waves</span>
+  </div>
+  <div class="layer-desc">
+    Replaces the LangGraph orchestration in Layer 4 when the user hits <code>/api/analyze-v2</code> or <code>/api/chat</code>.
+    Each agent is an independent <code>claude -p</code> subprocess run under the logged-in Claude Code Max subscription.
+    The 4-provider LLM cascade in Layer 5 becomes the <strong>fallback</strong> path only &mdash; triggered when the CLI is
+    unreachable, rate-limited, or returns an error. See <a href="changes.md" style="color:#F59E0B;">changes.md (2026-04-21)</a>
+    for the port log + 9 hotfixes.
+  </div>
+  <div class="components">
+    <div class="comp">
+      <div class="comp-name">Runner (subprocess)</div>
+      <div class="comp-file">agents/runner.py</div>
+      <div class="comp-desc">
+        <code>subprocess.Popen</code> + 3 daemon threads (stdin / stdout / stderr). Stream-json lines fed back to the asyncio
+        event loop via <code>loop.call_soon_threadsafe</code>. Works on both <code>WindowsProactorEventLoop</code> and
+        <code>WindowsSelectorEventLoop</code> (event-loop agnostic). Windows <code>.cmd</code> shim bypassed via
+        <code>node.exe cli.js</code>.
+      </div>
+    </div>
+    <div class="comp">
+      <div class="comp-name">Supervisor (DAG waves)</div>
+      <div class="comp-file">agents/supervisor.py</div>
+      <div class="comp-desc">
+        <code>compute_waves()</code> topologically layers the 12 agents by their <code>AgentSpec.upstream</code>.
+        Wave 0 = 9 parallel; Wave 1 = code-generation; Wave 2 = testing + ui-ux. Per-<code>cwd</code> lock keeps
+        writers serialised on <code>converted/</code>.
+      </div>
+    </div>
+    <div class="comp">
+      <div class="comp-name">Discovery pass</div>
+      <div class="comp-file">agents/runner.py::run_discovery</div>
+      <div class="comp-desc">
+        One cheap Haiku <code>claude -p</code> call before the waves &mdash; writes <code>context/digest.md</code> +
+        <code>context/brief_&lt;agent&gt;.md</code> per specialist so downstream agents skip re-exploration.
+      </div>
+    </div>
+    <div class="comp">
+      <div class="comp-name">Session adapter</div>
+      <div class="comp-file">agents/session_adapter.py</div>
+      <div class="comp-desc">
+        Mirrors <code>uploads/{sid}/files/</code> &rarr; <code>uploads/{sid}/source/</code> and detects the project root
+        (<code>package.json</code>, <code>pom.xml</code>, <code>composer.json</code>, <code>.csproj</code>, <code>go.mod</code>,
+        ...). Creates <code>converted/</code> + <code>context/</code>.
+      </div>
+    </div>
+    <div class="comp">
+      <div class="comp-name">Chat bridge</div>
+      <div class="comp-file">agents/chat_bridge.py</div>
+      <div class="comp-desc">
+        Single-turn <code>claude -p --output-format json</code> wrapper. Read/Glob/Grep allowed; Write/Edit/Bash/WebFetch/Task
+        denied. Never raises &mdash; returns <code>(text, error_or_None)</code> so <code>/api/chat</code> can fall back to
+        Layer 4+5 transparently.
+      </div>
+    </div>
+    <div class="comp">
+      <div class="comp-name">Cost ledger</div>
+      <div class="comp-file">core/cost_tracker.py + model_pricing.yaml</div>
+      <div class="comp-desc">
+        Per-agent SQLite ledger (<code>data/cost_tracking.db</code>) capturing input/output/cache tokens + CLI-reported
+        <code>total_cost_usd</code>. Subscription absorbs the real spend; ledger shows API-equivalent virtual cost for reporting
+        via openpyxl 5-sheet workbook.
+      </div>
+    </div>
+    <div class="comp">
+      <div class="comp-name">Report combiner</div>
+      <div class="comp-file">agents/v2_to_report_data.py</div>
+      <div class="comp-desc">
+        <code>build_combined_markdown()</code> concatenates per-agent markdown results into one string for
+        <code>document_generator.generate_docx</code> / <code>generate_pdf</code>. No changes to the export pipeline (Layer 7)
+        required.
+      </div>
+    </div>
+    <div class="comp">
+      <div class="comp-name">MCP trace server</div>
+      <div class="comp-file">mcp_server/trace_server.py</div>
+      <div class="comp-desc">
+        Local stdio MCP server exposing the trace SQLite read-only. Register via
+        <code>claude mcp add appnova-traces -- python -m mcp_server.trace_server</code> so Claude Code CLI sessions can
+        query backend telemetry directly.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- BOTTOM: DATA STORES -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div style="margin-top: 1.5rem; padding: 1.2rem; background: var(--card); border: 1px solid var(--border); border-radius: 12px;">
+  <div style="font-size: 0.85rem; font-weight: 700; color: var(--accent3); margin-bottom: 0.8rem;">Data Stores</div>
+  <div class="cascade" style="justify-content: space-around;">
+    <div class="cascade-item">
+      <div class="cascade-name">ChromaDB</div>
+      <div class="cascade-detail">Vector embeddings</div>
+      <div class="cascade-detail">Code chunks + analysis results</div>
+      <div class="cascade-detail">all-MiniLM-L6-v2 (GPU)</div>
+    </div>
+    <div class="cascade-item">
+      <div class="cascade-name">Session Store</div>
+      <div class="cascade-detail">uploads/{session_id}/</div>
+      <div class="cascade-detail">Files + PROJECT.md + context.json</div>
+    </div>
+    <div class="cascade-item">
+      <div class="cascade-name">Chat History</div>
+      <div class="cascade-detail">exports/chat_history/</div>
+      <div class="cascade-detail">JSON per session</div>
+    </div>
+    <div class="cascade-item">
+      <div class="cascade-name">Export Files</div>
+      <div class="cascade-detail">exports/</div>
+      <div class="cascade-detail">.docx + .md files</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- BOTTOM: API SURFACE -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div style="margin-top: 1rem; padding: 1.2rem; background: var(--card); border: 1px solid var(--border); border-radius: 12px;">
+  <div style="font-size: 0.85rem; font-weight: 700; color: var(--accent); margin-bottom: 0.8rem;">API Surface (35+ endpoints on port 8000)</div>
+  <div class="cmd-grid" style="grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));">
+    <div class="cmd"><code>POST /api/upload</code><span>Upload code files</span></div>
+    <div class="cmd"><code>POST /api/analyze/stream</code><span>SSE analysis with thoughts</span></div>
+    <div class="cmd"><code>POST /api/chat/agent-stream</code><span>Chat + agents + export</span></div>
+    <div class="cmd"><code>POST /api/export</code><span>Generate DOCX/MD</span></div>
+    <div class="cmd"><code>POST /api/diff</code><span>Code modernization diff</span></div>
+    <div class="cmd"><code>GET /api/brain/{id}</code><span>Project brain</span></div>
+    <div class="cmd"><code>GET /api/skills</code><span>List skills</span></div>
+    <div class="cmd"><code>GET /api/hooks</code><span>List hooks</span></div>
+    <div class="cmd"><code>GET /api/agents</code><span>List 13 agent types</span></div>
+    <div class="cmd"><code>GET /api/models</code><span>Available LLM models</span></div>
+    <div class="cmd"><code>GET /api/logs/stream</code><span>Live backend logs</span></div>
+    <div class="cmd"><code>GET /health</code><span>System health</span></div>
+  </div>
+</div>
+
+</div>
+
+<p style="text-align: center; color: var(--dim); font-size: 0.65rem; margin-top: 2rem;">AppNova AI v2.0 - Complete Architecture | Generated 2026-04-07</p>
+
+</body>
+</html>

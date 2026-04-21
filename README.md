@@ -17,6 +17,14 @@
 
 ---
 
+## 🖼️ Frontend Architecture at a Glance
+
+![AppNova React Frontend — layered architecture infographic](AppNova_Frontend_Architecture.svg)
+
+> Full interactive version: [AppNova_Frontend_Architecture.html](AppNova_Frontend_Architecture.html) · Raw SVG: [AppNova_Frontend_Architecture.svg](AppNova_Frontend_Architecture.svg)
+
+---
+
 ## 🆕 What's new in v2 — Claude Code CLI runner (2026-04-21)
 
 AppNova v2 replaces the LangGraph + 4-provider LLM pipeline with a subprocess-based **Claude Code CLI runner** that calls your Max subscription. See [changes.md](changes.md) for the full 9-hotfix port log.

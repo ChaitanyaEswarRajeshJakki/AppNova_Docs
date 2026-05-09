@@ -27,13 +27,13 @@
 
 ## 🆕 What's new in v2 — Claude Code CLI runner (2026-04-21)
 
-AppNova v2 replaces the LangGraph + 4-provider LLM pipeline with a subprocess-based **Claude Code CLI runner** that calls your Max subscription. See [changes.md](changes.md) for the full 9-hotfix port log.
+AppNova v2 replaces the LangGraph + 4-provider LLM pipeline with a subprocess-based **Claude Code CLI runner** that calls your Max subscription. See [changes.md](changes.md) for the full 9-hotfix changelog.
 
 | | v1 (legacy, still works) | v2 (new default) |
 |---|---|---|
 | **Auth** | 5 Claude API keys rotated | Claude Code Max subscription (zero API spend) |
 | **Per-agent context** | RAG slice from ChromaDB (~8% of codebase) | Full project dir as `cwd`; Read/Glob/Grep on demand |
-| **Execution** | Sequential LangGraph nodes | DAG waves — 9 agents parallel in wave 0 |
+| **Execution** | Sequential LangGraph nodes | DAG waves — 14 agents parallel in wave 0 |
 | **Runtime** | ~30 min sequential | ~8-10 min with wave parallelism |
 | **Tool calls** | Not exposed to frontend | Streamed live (stream-json events) |
 | **Failure mode** | Pipeline halts on LLM error | Per-agent retries + graceful fallback to v1 chain |
@@ -48,7 +48,7 @@ Both paths coexist. `/api/analyze-v2` uses the CLI runner; `/api/analyze` (legac
 **AppNova** is a self-hosted AI development assistant that ingests entire codebases (any size, any language) and delivers:
 
 - 💬 **Conversational code exploration** — ask natural-language questions about any file, function, or architectural decision (`/api/chat` — Claude Code primary)
-- 🧠 **12 specialist agents** — architecture, security, testing, business rules, DevOps, data migration, UI/UX, and more (`/api/analyze-v2` — subscription-backed)
+- 🧠 **14 specialist agents** — architecture, security, testing, business rules, DevOps, data migration, UI/UX, and more (`/api/analyze-v2` — subscription-backed)
 - 🗺️ **Auto-generated architecture diagrams** — Mermaid component trees, dependency graphs, call flows
 - 🔄 **Per-file code conversion** — convert a legacy codebase to a target stack with 1:1 file mapping, cached, resumable, parallel
 - 🛣️ **Migration planning** — phased roadmap with effort estimates, risks, and acceptance criteria
@@ -62,12 +62,12 @@ Both paths coexist. `/api/analyze-v2` uses the CLI runner; `/api/analyze` (legac
 ## 📐 Architecture (v2)
 
 ```text
-┌─────────────────────────────────────────────────────────────────────────┐
+┌────────────────────────────────────────────────────────────────────────────┐
 │                   Frontend (React 18 + Vite 8)                          │
 │   Sidebar · ReportView · ChatView · DiffView · ConversionPanel          │
-└──────────────────────────┬──────────────────────────────────────────────┘
+└──────────────────────────┬─────────────────────────────────────────────────┘
                            │ REST + SSE
-┌──────────────────────────▼──────────────────────────────────────────────┐
+┌──────────────────────────▼─────────────────────────────────────────────────┐
 │                   FastAPI backend (backend/main.py)                     │
 │                                                                         │
 │   /api/analyze-v2 ──▶ agents/session_adapter ─ uploads/{sid}/source/    │
@@ -75,11 +75,12 @@ Both paths coexist. `/api/analyze-v2` uses the CLI runner; `/api/analyze` (legac
 │                          (Haiku; one pass; writes digest.md + briefs)   │
 │                  └──▶ agents/supervisor.run_supervised                  │
 │                          │                                              │
-│        ┌─── wave 0 (9 agents in parallel) ──────┐                       │
+│        ┌─── wave 0 (14 agents in parallel) ──────┐                      │
 │        │ code-analysis    architecture          │                       │
 │        │ business-rules   security              │                       │
 │        │ migration-planner documentation        │                       │
 │        │ devops  data-migration  integration    │                       │
+│        │ testing  ui-ux  refactoring codegen    │                       │
 │        └────────────────────────────────────────┘                       │
 │                  │                                                      │
 │         wave 1 ─▶ code-generation (writes converted/)                   │
@@ -95,16 +96,16 @@ Both paths coexist. `/api/analyze-v2` uses the CLI runner; `/api/analyze` (legac
 │                                                │                        │
 │                                        Claude API → Gemini              │
 │                                        → Groq → Ollama                  │
-└─────────────────────────────────────────────────────────────────────────┘
+└────────────────────────────────────────────────────────────────────────────┘
          │
          ▼ each `claude -p` subprocess spawned here:
-┌─────────────────────────────────────────────────────────────────────────┐
+┌────────────────────────────────────────────────────────────────────────────┐
 │  Claude Code CLI (npm global; uses Max subscription auth)               │
 │  ├─ Read/Glob/Grep on cwd=uploads/{sid}/source/<detected-root>/         │
 │  ├─ Stream-json events → asyncio.Queue → SSE to browser                 │
 │  └─ Write/Edit only for code-generation (cwd=converted/ + --add-dir     │
 │     source/)                                                            │
-└─────────────────────────────────────────────────────────────────────────┘
+└────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ### Core components
@@ -124,24 +125,26 @@ Both paths coexist. `/api/analyze-v2` uses the CLI runner; `/api/analyze` (legac
 
 ---
 
-## 🤖 The 12 specialist agents
+## 🤖 The 14 specialist agents
 
-Each agent is registered in [`backend/agents/config.py`](backend/agents/config.py) and has a system prompt in [`backend/agents/prompts.py`](backend/agents/prompts.py). The supervisor layers them into execution waves by `AgentSpec.upstream` dependencies — wave 0 runs every agent that has no upstream in parallel; later waves wait for their inputs.
+Each agent is registered in [`backend/agents/config.py`](backend/agents/config.py) and has a system prompt in [`backend/agents/prompts.py`](backend/agents/prompts.py). The supervisor orchestrates them via a DAG scheduler.
 
-| Agent ID | Tier | Wave | Upstream deps |
+| Agent ID | Tier | Wave | Purpose |
 |---|---|---|---|
-| `code-analysis` | heavy | 0 | — |
-| `architecture` | heavy | 0 | — |
-| `business-rules` | heavy | 0 | — |
-| `security` | heavy | 0 | — |
-| `migration-planner` | heavy | 0 | — |
-| `documentation` | light | 0 | — |
-| `devops` | light | 0 | — (skipped if no Docker/CI signals) |
-| `data-migration` | light | 0 | — (skipped if no SQL/ORM signals) |
-| `integration` | light | 0 | — |
-| `code-generation` | heavy | 1 | all of wave 0 |
-| `testing` | light | 2 | code-generation |
-| `ui-ux` | heavy | 2 | code-generation |
+| `code-analysis` | heavy | 0 | Technical debt scoring, anti-patterns, complexity metrics |
+| `architecture` | heavy | 0 | Service decomposition, dependency maps, migration phases |
+| `business-rules` | heavy | 0 | State machines, validation rules, domain logic extraction |
+| `security` | heavy | 0 | OWASP Top 10, secrets scan, vulnerability remediation |
+| `migration-planner` | heavy | 0 | Phased roadmap, effort estimates, risk assessment |
+| `documentation` | light | 0 | ADRs, developer guides, API docs, architecture decisions |
+| `devops` | light | 0 | Docker, CI/CD, IaC (Terraform/CloudFormation) |
+| `data-migration` | light | 0 | Schema analysis, ETL scripts, data-driven migration |
+| `integration` | light | 0 | OpenAPI specs, event-driven design, service contracts |
+| `refactoring` | heavy | 1 | Before/after code patterns, decomposition strategies |
+| `code-generation` | heavy | 1 | Full target-stack project generation with Write/Edit |
+| `testing` | light | 2 | Unit tests, integration tests, E2E scenarios |
+| `ui-ux` | heavy | 2 | Component library, accessibility improvements, design tokens |
+| `data-modeling` | light | 0 | Schema optimization, denormalization advice, query tuning |
 
 **Tiers → models** (override with `HEAVY_MODEL` / `LIGHT_MODEL` / `DISCOVERY_MODEL` env vars):
 
@@ -149,7 +152,7 @@ Each agent is registered in [`backend/agents/config.py`](backend/agents/config.p
 - `light` → `claude-haiku-4-5-20251001`
 - discovery pass → `claude-haiku-4-5-20251001`
 
-**Execution model** — the runner streams stream-json tool-call events per agent. The frontend receives them as `agent_start` / `assistant` (with tool_calls) / `tool_result` / `agent_complete`. Legacy-shape `{type: start|complete|error}` events are emitted in parallel so the existing React code keeps working without changes.
+**Execution model** — the runner streams stream-json tool-call events per agent. The frontend receives them as `agent_start` / `assistant` (with tool_calls) / `tool_result` / `agent_complete`.
 
 ---
 
@@ -157,13 +160,13 @@ Each agent is registered in [`backend/agents/config.py`](backend/agents/config.p
 
 Still available via `/api/convert/{session_id}` — converts every source file in the uploaded codebase 1:1 into your target stack, with **full caching, resumability, and parallelism**.
 
-- **Planner** ([`tools/conversion_planner.py`](backend/tools/conversion_planner.py)) groups files by the first two directory segments so a domain module's files convert with mutual context. Hard caps at **8 files / 60 KB per batch** so a single batch always fits one LLM prompt with headroom for ~1.5× output.
-- **Runner** ([`tools/conversion_runner.py`](backend/tools/conversion_runner.py)) executes batches with bounded concurrency (1–12 parallel), persists an atomic manifest at `uploads/{sid}/conversion/manifest.json`, and keys each batch by SHA256 of `(prompt version, target stack, source paths + content hashes)`.
+- **Planner** ([`tools/conversion_planner.py`](backend/tools/conversion_planner.py)) groups files by the first two directory segments so a domain module's files convert with mutual context.
+- **Runner** ([`tools/conversion_runner.py`](backend/tools/conversion_runner.py)) executes batches with bounded concurrency (1–12 parallel), persists an atomic manifest.
 - **Failure isolation** — one failed batch never blocks the rest. Re-running picks up exactly the failed batches.
 - **Prompt-version bump** in `conversion_runner.py` invalidates the entire cache automatically.
-- **UI** — [`ConversionPanel.tsx`](frontend_react/src/components/ConversionPanel.tsx) gives you Start/Resume, Retry Failed, Force Full Re-run, Stop, plus live progress counters, status filter chips, and per-batch collapsible details.
+- **UI** — [`ConversionPanel.tsx`](frontend_react/src/components/ConversionPanel.tsx) gives you Start/Resume, Retry Failed, Force Full Re-run, Stop, plus live progress counters.
 
-The v2 `code-generation` agent is a simpler alternative: one subprocess writes the whole target project in `uploads/{sid}/converted/` using Claude Code's Write/Edit tools directly, with `--add-dir` pointing at the source tree.
+The v2 `code-generation` agent is a simpler alternative: one subprocess writes the whole target project in `uploads/{sid}/converted/` using Claude Code's Write/Edit tools directly.
 
 ---
 
@@ -256,7 +259,7 @@ All routes live in [`backend/main.py`](backend/main.py). Every route is tagged f
 
 ## 🔁 LLM fallback cascade (backup path)
 
-When the Claude Code subscription is unavailable (CLI missing, rate-limited, or the bridge returns an error), AppNova falls through to the legacy cascade in [`backend/core/llm.py`](backend/core/llm.py):
+When the Claude Code subscription is unavailable (CLI missing, rate-limited, or the bridge returns an error), AppNova falls through to the legacy cascade in [`backend/core/llm.py`](backend/core/llm.py).
 
 1. **Claude API** (Tier 2) — up to 5 keys, 300 s max cooldown (Tier-2 resets in 5 min)
 2. **Gemini 2.5 Flash** — up to 9 keys, grouped by project
@@ -271,9 +274,9 @@ When the Claude Code subscription is unavailable (CLI missing, rate-limited, or 
 - **All keys cold on this provider** → fall to next provider.
 - **All providers cold** → fall to Ollama; if Ollama fails, raise.
 
-**Cancellation** is honored at three safe checkpoints: before an agent starts, between key rotations inside a tier, and between fallback tiers. An already-submitted HTTP request still finishes — that's the only thing the runtime can't interrupt.
+**Cancellation** is honored at three safe checkpoints: before an agent starts, between key rotations inside a tier, and between fallback tiers.
 
-**Fingerprint caching** ([`backend/core/fingerprint.py`](backend/core/fingerprint.py)): every analysis result is keyed by `(pipeline_fp, codebase_fp, agent_id)`. `pipeline_fp` is now **per-agent scoped** — editing `skills/security.md` only invalidates the security agent's cache, not every agent's.
+**Fingerprint caching** ([`backend/core/fingerprint.py`](backend/core/fingerprint.py)): every analysis result is keyed by `(pipeline_fp, codebase_fp, agent_id)`. `pipeline_fp` is now **per-agent and per-discovery-digest hash**.
 
 ---
 
@@ -298,7 +301,7 @@ The launcher:
 
 1. Verifies Python 3.11.9.
 2. Creates `backend/venv` and installs `backend/requirements.txt`.
-3. Starts FastAPI on `http://127.0.0.1:8000` **without `--reload`** (uvicorn's reloader forces `WindowsSelectorEventLoopPolicy`, which breaks `asyncio.create_subprocess_exec` — see Hotfix 3 in [changes.md](changes.md)).
+3. Starts FastAPI on `http://127.0.0.1:8000` **without `--reload`** (uvicorn's reloader forces `WindowsSelectorEventLoopPolicy`, which breaks `asyncio.create_subprocess_exec` — see Hotfix 3)
 4. Starts Vite dev server on `http://localhost:5173`.
 5. Opens the UI in your browser.
 
@@ -369,8 +372,8 @@ FORCE_CPU_EMBEDDINGS=false
 2. **Analyze** — pick one or more agents from the sidebar. The UI posts to `/api/analyze-v2`. Behind the scenes:
    a. Session adapter mirrors `files/` → `source/` and detects the project root (`package.json`, `pom.xml`, `.csproj`, etc.).
    b. One discovery `claude -p` call (Haiku) writes `context/digest.md` + `context/brief_<agent>.md`.
-   c. Supervisor dispatches wave 0 — up to 9 agents run `claude -p` subprocesses in parallel. Each has Read/Glob/Grep on the source dir.
-   d. Wave 1 dispatches `code-generation` (writes converted/); wave 2 dispatches `testing` + `ui-ux` in parallel.
+   c. Supervisor dispatches wave 0 — up to 14 agents run `claude -p` subprocesses in parallel. Each has Read/Glob/Grep on the source dir.
+   d. Wave 1 dispatches `code-generation` + `refactoring`; wave 2 dispatches `testing` + `ui-ux` in parallel.
 3. **Chat** — ask follow-ups. The chat bridge tries Claude Code first; on failure falls through to the LangGraph chat graph.
 4. **Generate or convert** — v2 `code-generation` writes a full target-stack project under `uploads/{sid}/converted/`. Or use the legacy **Convert** tab for per-file 1:1 batched conversion.
 5. **Preview** — one-click self-healing dev-server launcher runs the generated project in-browser.
@@ -387,7 +390,7 @@ AppNova/
 │   ├── config.py                    ← Pydantic settings (v1 env vars)
 │   ├── requirements.txt             ← Backend deps
 │   ├── agents/                      ← v2 runner package (NEW)
-│   │   ├── config.py                ← 12-agent registry + tier→model map
+│   │   ├── config.py                ← 14-agent registry + tier→model map
 │   │   ├── runner.py                ← `claude -p` subprocess + threaded pipes
 │   │   ├── supervisor.py            ← DAG wave scheduler + per-cwd lock
 │   │   ├── state.py                 ← RunState TypedDict blackboard
@@ -414,7 +417,7 @@ AppNova/
 │   │   ├── analysis_graph.py
 │   │   ├── chat_graph.py
 │   │   └── diff_graph.py
-│   ├── skills/                      ← 12 agent Markdown prompts (v1; v2 uses agents/prompts.py)
+│   ├── skills/                      ← 14 agent Markdown prompts (v1; v2 uses agents/prompts.py)
 │   ├── tools/                       ← Upload, code-exec, document-gen, conversion
 │   ├── api/                         ← Pydantic schemas & sub-routers
 │   ├── hooks/                       ← Pre/post processing hooks
@@ -447,11 +450,11 @@ AppNova/
 
 ## 🧪 Tech stack
 
-**v2 runner** — Python `subprocess.Popen` + threaded pipes · `@anthropic-ai/claude-code` (npm global) · `shutil.which` shim resolution · `asyncio.Queue` via `loop.call_soon_threadsafe` · `CREATE_NO_WINDOW` on Windows.
+**v2 runner** — Python `subprocess.Popen` + threaded pipes · `@anthropic-ai/claude-code` (npm global) · `shutil.which` shim resolution · `asyncio.Queue` via `loop.call_soon_threadsafe` · ChromaDB adapter for concurrent sessions.
 
-**Backend** — FastAPI 0.115 · Uvicorn 0.31 · LangChain 0.3 · LangGraph 1.0 · ChromaDB 1.5 · sentence-transformers 2.7 · python-docx 1.1 · markdown2 · loguru · python-multipart · Pygments · openpyxl 3.1 (cost report) · PyYAML 6.0.
+**Backend** — FastAPI 0.115 · Uvicorn 0.31 · LangChain 0.3 · LangGraph 1.0 · ChromaDB 1.5 · sentence-transformers 2.7 · python-docx 1.1 · markdown2 · loguru · python-multipart · Pygments.
 
-**Frontend** — React 18.3 · TypeScript 5.9 · Vite 8.0 · Tailwind 4.2 · Monaco Editor 4.7 · Mermaid 11.14 · react-markdown 9.0 · remark-gfm 4.0 · react-syntax-highlighter 15.5 · axios 1.14.
+**Frontend** — React 18.3 · TypeScript 5.9 · Vite 8.0 · Tailwind 4.2 · Monaco Editor 4.7 · Mermaid 11.14 · react-markdown 9.0 · remark-gfm 4.0 · react-syntax-highlighter 15.5 · axios 1.x.
 
 **LLM SDKs** — `@anthropic-ai/claude-code` CLI (primary) · langchain-anthropic · langchain-google-genai · langchain-groq · langchain-ollama · langchain-openai (extensibility).
 
@@ -459,7 +462,7 @@ AppNova/
 
 ## 🔌 MCP integration (bonus)
 
-[`backend/mcp_server/trace_server.py`](backend/mcp_server/trace_server.py) is a local stdio MCP server exposing AppNova's trace SQLite read-only. Register it once and Claude Code CLI sessions can query your backend telemetry directly:
+[`backend/mcp_server/trace_server.py`](backend/mcp_server/trace_server.py) is a local stdio MCP server exposing AppNova's trace SQLite read-only. Register it once and Claude Code CLI sessions can query cost, errors, and performance metrics.
 
 ```powershell
 pip install mcp
@@ -473,7 +476,7 @@ Exposed tools: `list_sessions`, `get_session`, `get_node_runs`, `get_errors`, `g
 ## 🧑‍💻 Contributing
 
 1. Fork & branch from `main`.
-2. **Add an agent** — extend `AGENT_REGISTRY` in [`backend/agents/config.py`](backend/agents/config.py) with a new `AgentSpec`, then add the system prompt in [`backend/agents/prompts.py`](backend/agents/prompts.py) under `AGENT_PROMPTS["your-agent"]`. Declare upstream deps; supervisor auto-layers it into the right wave.
+2. **Add an agent** — extend `AGENT_REGISTRY` in [`backend/agents/config.py`](backend/agents/config.py) with a new `AgentSpec`, then add the system prompt in [`backend/agents/prompts.py`](backend/agents/prompts.py).
 3. **Add a skill (v1 parallel)** — drop a Markdown file into `backend/skills/{agent-id}.md`; it's loaded on next request and bumps its own fingerprint.
 4. **Add a provider** — extend `backend/core/llm.py` `call_llm_with_fallback` (mirror the Claude/Gemini/Groq patterns for key-rotation + cooldown). The v2 path skips this chain entirely.
 5. Run the linters/tests you have locally, then open a PR.

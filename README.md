@@ -1,18 +1,14 @@
-# AppNova — AI-Powered Codebase Intelligence Platform
+# AppNova — Code Modernization Studio
 
-> Turn any codebase into a queryable, explainable, migratable knowledge base.
-> Chat with your repo, generate architecture diagrams, produce migration plans,
-> convert legacy code to modern stacks file-by-file, and export full analysis
-> reports — powered by your **Claude Code Max subscription** (no API keys
-> required for the happy path) with a 4-provider LLM cascade as backup.
+> Turn any legacy codebase into a runnable, demoable target stack — line-by-line, 1-to-1, with a full audit trail.
+> Drive Claude Code headless through a DAG of specialist agents, get back architecture diagrams, security audits, a file-by-file migration blueprint, an actually-runnable converted project, and `.md` + `.docx` + `.pdf` reports — all on your **Claude Max subscription** (zero API spend for analysis runs).
 
-[![Python](https://img.shields.io/badge/Python-3.11.9-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![Python](https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
-[![React](https://img.shields.io/badge/React-18.3-61DAFB?logo=react&logoColor=black)](https://react.dev/)
-[![Vite](https://img.shields.io/badge/Vite-8.0-646CFF?logo=vite&logoColor=white)](https://vitejs.dev/)
-[![Claude Code](https://img.shields.io/badge/Claude%20Code-Max%20Subscription-D97706)](https://docs.claude.com/en/docs/claude-code/overview)
-[![LangGraph](https://img.shields.io/badge/LangGraph-1.0-1C3C3C?logo=langchain)](https://www.langchain.com/langgraph)
-[![ChromaDB](https://img.shields.io/badge/ChromaDB-1.5-FF6B6B)](https://www.trychroma.com/)
+[![Claude Code](https://img.shields.io/badge/Claude%20Code-Max%20Subscription-D97706?logo=anthropic&logoColor=white)](https://docs.claude.com/en/docs/claude-code/overview)
+[![Playwright](https://img.shields.io/badge/Playwright-1.47-2EAD33?logo=playwright&logoColor=white)](https://playwright.dev/)
+[![Mermaid](https://img.shields.io/badge/Mermaid-Server--Rendered-FF3670?logo=mermaid&logoColor=white)](https://mermaid.js.org/)
+[![ChromaDB](https://img.shields.io/badge/ChromaDB-0.5-FF6B6B)](https://www.trychroma.com/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 ---
@@ -25,255 +21,184 @@
 
 ---
 
-## 🆕 What's new in v2 — Claude Code CLI runner (2026-04-21)
-
-AppNova v2 replaces the LangGraph + 4-provider LLM pipeline with a subprocess-based **Claude Code CLI runner** that calls your Max subscription. See [changes.md](changes.md) for the full 9-hotfix port log.
-
-| | v1 (legacy, still works) | v2 (new default) |
-|---|---|---|
-| **Auth** | 5 Claude API keys rotated | Claude Code Max subscription (zero API spend) |
-| **Per-agent context** | RAG slice from ChromaDB (~8% of codebase) | Full project dir as `cwd`; Read/Glob/Grep on demand |
-| **Execution** | Sequential LangGraph nodes | DAG waves — 9 agents parallel in wave 0 |
-| **Runtime** | ~30 min sequential | ~8-10 min with wave parallelism |
-| **Tool calls** | Not exposed to frontend | Streamed live (stream-json events) |
-| **Failure mode** | Pipeline halts on LLM error | Per-agent retries + graceful fallback to v1 chain |
-| **Frontend change** | N/A | Single-line URL flip in `api.ts` |
-
-Both paths coexist. `/api/analyze-v2` uses the CLI runner; `/api/analyze` (legacy) is still reachable for rollback. `/api/chat` tries Claude Code first with transparent fallback to the LLM cascade.
-
----
-
 ## ✨ What is AppNova?
 
-**AppNova** is a self-hosted AI development assistant that ingests entire codebases (any size, any language) and delivers:
+AppNova is a self-hosted modernization studio that ingests a legacy codebase and delivers a complete, demoable migration package:
 
-- 💬 **Conversational code exploration** — ask natural-language questions about any file, function, or architectural decision (`/api/chat` — Claude Code primary)
-- 🧠 **12 specialist agents** — architecture, security, testing, business rules, DevOps, data migration, UI/UX, and more (`/api/analyze-v2` — subscription-backed)
-- 🗺️ **Auto-generated architecture diagrams** — Mermaid component trees, dependency graphs, call flows
-- 🔄 **Per-file code conversion** — convert a legacy codebase to a target stack with 1:1 file mapping, cached, resumable, parallel
-- 🛣️ **Migration planning** — phased roadmap with effort estimates, risks, and acceptance criteria
-- 📊 **Exportable reports** — `.docx` and `.md` for stakeholders
-- ⚡ **Live preview** — run generated projects in a sandboxed dev server from the UI
-- 🔌 **4-provider LLM fallback** — Claude API → Gemini → Groq → Ollama, fires only when Claude Code subscription fails
-- 🔒 **100% local code** — source never leaves your machine; only prompts go to Claude
+- 💬 **Per-agent chat drawer** on every report card — ask follow-ups, request edits, or flip into **Fix code** mode and let Claude edit the converted project in place. Every code-mode turn snapshots `converted/` first so any edit is reversible.
+- 🧠 **14 specialist agents** — discovery, code-analysis, architecture, security, business-rules, integration, data-migration, devops, migration-planner, code-generation, documentation, code-review, testing, ui-ux, run as a DAG of waves.
+- 📚 **Playbook + RAG layer** — every supported migration type ships a `PlaybookDefinition` ([`backend/playbooks/`](backend/playbooks/)) with idiomatic-translation hints, type-mapping tables, parity floors, and per-agent prompts. The optional **ChromaDB RAG** layer ([`backend/playbooks/rag/`](backend/playbooks/rag/)) retrieves hand-authored gold examples + verified prior conversions, spliced into `code-generation` and `migration-planner` prompts as a `RETRIEVED EXAMPLES` block. Disable with `APPNOVA_RAG_ENABLED=0`.
+- 🛡️ **Production-ready placeholder hardening** — deploy-details form (24 fields incl. Azure AD GUIDs / Key Vault refs / SMTP / SSO), regex-based leak detector, **automatic quarantine pass** rewrites leaked literals to `__FIELDNAME__` placeholders + ships a deterministic `docs/SECRETS_MAPPING.md` with `az keyvault secret set` / `dotnet user-secrets set` commands.
+- 🗺️ **Server-side Mermaid prerender** — every ` ```mermaid ` block is rendered to SVG/PNG by a Playwright/Chromium pass before the report is saved. Same pixel-perfect output in browser, PDF export, and DOCX.
+- 🔄 **`file_map.json` contract** — `migration-planner` ships an authoritative source→target file map; `code-generation`, `code-review`, `testing`, and deterministic auditors (`file_coverage`, `parity_checker`, `round_trip_tester`, `deploy_audit`) all read it.
+- 🧮 **Eval harness** — `python -m backend.harness {score|score-all|diff}` produces a CSV scorecard of coverage / leak / cost / elapsed numbers. Zero LLM cost; regression-detects prompt-edit changes via threshold gates.
+- ⏱️ **Topbar run-elapsed timer** survives hub→workspace navigation (server-side stamped, frontend rehydrates from `/api/session/<sid>/status`).
+- 📦 **Auto-export** writes every finished report as `.md`, `.docx`, **and** `.pdf` the moment it completes.
+- 🧊 **Demo sessions** freeze a completed run (reports + exports + converted project) into [`demo_sessions/`](demo_sessions) for zero-token replay.
+- 💵 **Cost tracker** persists per-agent token counts to a 5-sheet Excel workbook.
+- 🔒 **100% local code** — your source never leaves your machine; only prompts go to Anthropic.
 
 ---
 
-## 📐 Architecture (v2)
+## 📐 Architecture at a Glance
 
 ```text
-┌─────────────────────────────────────────────────────────────────────────┐
-│                   Frontend (React 18 + Vite 8)                          │
-│   Sidebar · ReportView · ChatView · DiffView · ConversionPanel          │
-└──────────────────────────┬──────────────────────────────────────────────┘
-                           │ REST + SSE
-┌──────────────────────────▼──────────────────────────────────────────────┐
-│                   FastAPI backend (backend/main.py)                     │
-│                                                                         │
-│   /api/analyze-v2 ──▶ agents/session_adapter ─ uploads/{sid}/source/    │
-│                  └──▶ agents/runner.run_discovery ──▶ claude -p         │
-│                          (Haiku; one pass; writes digest.md + briefs)   │
-│                  └──▶ agents/supervisor.run_supervised                  │
-│                          │                                              │
-│        ┌─── wave 0 (9 agents in parallel) ──────┐                       │
-│        │ code-analysis    architecture          │                       │
-│        │ business-rules   security              │                       │
-│        │ migration-planner documentation        │                       │
-│        │ devops  data-migration  integration    │                       │
-│        └────────────────────────────────────────┘                       │
-│                  │                                                      │
-│         wave 1 ─▶ code-generation (writes converted/)                   │
-│                  │                                                      │
-│         wave 2 ─▶ testing  ·  ui-ux                                     │
-│                                                                         │
-│   /api/chat ─────▶ agents/chat_bridge ──▶ claude -p (Read/Glob/Grep)    │
-│                  └─▶ falls back to LangGraph chat_graph on error ────┐  │
-│                                                                      ▼  │
-│   Legacy (v1, still reachable):                                         │
-│   /api/analyze ──▶ LangGraph analysis_graph ─▶ ChromaDB RAG             │
-│   /api/chat/stream ─▶ LangGraph chat_graph  ─▶ 4-provider fallback      │
-│                                                │                        │
-│                                        Claude API → Gemini              │
-│                                        → Groq → Ollama                  │
-└─────────────────────────────────────────────────────────────────────────┘
-         │
-         ▼ each `claude -p` subprocess spawned here:
-┌─────────────────────────────────────────────────────────────────────────┐
-│  Claude Code CLI (npm global; uses Max subscription auth)               │
-│  ├─ Read/Glob/Grep on cwd=uploads/{sid}/source/<detected-root>/         │
-│  ├─ Stream-json events → asyncio.Queue → SSE to browser                 │
-│  └─ Write/Edit only for code-generation (cwd=converted/ + --add-dir     │
-│     source/)                                                            │
-└─────────────────────────────────────────────────────────────────────────┘
+┌───────────────────────────────────────────────────────────────────────────┐
+│   Browser  (frontend/)  —  static HTML/JS, no build step                  │
+│   hub.html · index.html · review.html · login.html                        │
+│   Cards per agent · Chat drawer · Export panel · Demo list                │
+└──────────────────────────┬────────────────────────────────────────────────┘
+                           │ REST + SSE  (login.html → JWT → /api/*)
+┌──────────────────────────▼────────────────────────────────────────────────┐
+│   FastAPI backend  (backend/main.py — :8002)                              │
+│                                                                           │
+│   /api/upload                  multipart / zip → uploads/{sid}/source/   │
+│   /api/analyze/{sid}           SSE — wave/agent events                   │
+│   /api/chat/{sid}/{aid}        per-card chat (report or code-fix mode)   │
+│   /api/mermaid/render          server-side SVG cache                      │
+│   /api/export/{sid}/{aid}.*    .docx / .pdf re-download                   │
+│   /api/demo-sessions/*         freeze · load · list · delete              │
+│   /api/session/{sid}/deploy-config  deploy-form CRUD + materialise        │
+│   /api/rag/*                   seed / ingest / query endpoints            │
+│                                                                           │
+│   ┌─────────────────────────────────────────────────────────────────┐     │
+│   │ Supervisor  (agents/supervisor.py) — DAG → topological waves    │     │
+│   │                                                                 │     │
+│   │  Wave 0:  discovery                                             │     │
+│   │  Wave 1:  code-analysis · architecture · security               │     │
+│   │           business-rules · integration · data-migration · devops│     │
+│   │  Wave 2:  migration-planner             ← writes file_map.json  │     │
+│   │  Wave 3:  code-generation               ← writes converted/     │     │
+│   │           (multipass: 50-row chunks w/ cooldown when enabled)   │     │
+│   │  Wave 3b: documentation                 ← writes converted/docs/│     │
+│   │  Wave 4:  code-review · testing · ui-ux                         │     │
+│   │  Wave 5:  migration_pipeline (deterministic, post-agent)        │     │
+│   │           field_extractor → parity_checker → round_trip_tester  │     │
+│   │           rag-learn → gated write into {playbook}__learned      │     │
+│   └─────────────────────────────────────────────────────────────────┘     │
+│                                                                           │
+│   Post-processing (deterministic, zero LLM cost):                        │
+│   • file_coverage     source→target coverage audit (fails < 70%)         │
+│   • deploy_audit      literal + regex leak scan over converted/           │
+│   • quarantine_leaks  rewrite leaks → __FIELDNAME__ placeholders         │
+│   • render_secrets_mapping → docs/SECRETS_MAPPING.md                     │
+│   • mermaid prerender (Playwright Chromium → SVG cache by sha256)        │
+│   • context_attestation scan (✅ full / ⚠ partial / ❌ gap per agent)    │
+│   • export.py        md → html → docx (python-docx) / pdf (Chromium)     │
+│   • cost_tracker     per-agent token ledger → 5-sheet .xlsx              │
+└──────────────────────────┬────────────────────────────────────────────────┘
+                           ▼
+┌───────────────────────────────────────────────────────────────────────────┐
+│   Claude Code CLI  →  Anthropic servers  →  streamed tool calls           │
+│   • Read / Glob / Grep on cwd=uploads/{sid}/source/                       │
+│   • Write / Edit on cwd=uploads/{sid}/converted/  (writer-agents only)   │
+│   • Per-cwd writer lock serialises code-gen · code-review · testing · ui  │
+└───────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Core components
+### Key design decisions
 
-| Layer | Technology | Purpose |
-|---|---|---|
-| Frontend | React 18, TypeScript 5.9, Vite 8 | IDE-style UI with agent tabs, streaming reports, live diff, Monaco editor |
-| API | FastAPI 0.115 + Uvicorn 0.31 | REST + Server-Sent Events |
-| **v2 Runner** | **`claude -p` subprocess + threaded pipes** | **DAG wave scheduler against Claude Code Max subscription** |
-| **v2 Cost tracking** | **`backend/core/cost_tracker.py` + SQLite + openpyxl** | **Per-call virtual-cost ledger** |
-| v1 Orchestration | LangGraph 1.0, LangChain 0.3 | Analysis / chat / diff state graphs (fallback path) |
-| Vector store | ChromaDB 1.5 (HNSW) | Semantic code retrieval (v1 only) |
-| Embeddings | Jina Embeddings v2 Base Code (via sentence-transformers) | Local, CPU/GPU |
-| LLMs | Claude Code subscription primary · Claude API / Gemini 2.5 Flash / Groq Llama 3.3 70B / Ollama fallback | 2-tier primary + 4-tier cascade |
-| Docs | python-docx, markdown2 | `.docx` + `.md` export |
-| Reports | react-markdown + remark-gfm + react-syntax-highlighter (Prism oneDark) | Rich rendering with copy-buttons and Mermaid |
+| Decision | Why it matters |
+|---|---|
+| **Parallel waves over a hardcoded loop.** Agents declare `upstream` deps; `compute_waves()` topologically layers them. | Wave size is whatever the DAG allows — independent agents run concurrently. |
+| **Blackboard state.** Completed agents write markdown to `RunState`; later waves read via file paths, not in-memory passing. | Crash-resumable — a dropped wave can be re-run from where it died. |
+| **Writer-agent lock.** code-generation, code-review, testing, ui-ux all write into `converted/` and serialise on a per-cwd lock. | Concurrent writers can't trample shared files. |
+| **`file_map.json` is enforced.** If migration-planner ships without a parseable `## A.4 file_map.json` block, supervisor saves the draft and dispatches a repair pass. | Downstream code-generation reads `context/file_map.json` as its authoritative contract. |
+| **Coverage gate (70% floor).** code-generation is downgraded to `error` when file-coverage < 70%, hard-skipping code-review / testing / ui-ux. | Prevents silently-narrow conversions from reaching downstream agents. |
+| **Chat snapshots.** "Fix code" mode copies `converted/` to `chat/{agent}/snapshots/snap-xxxx/` before Claude edits anything. | Any turn is reversible by restoring the snapshot folder. |
+| **Playbook resolves once per run.** `resolve_playbook(upload_dir)` picks the best-matching `PlaybookDefinition` by scoring `source_signals` against the file tree. | Idiomatic-translation hints, parity floors, and skip lists are applied consistently across every agent. |
+| **RAG is best-effort enrichment.** `build_agent_prompt` appends a `RETRIEVED EXAMPLES` block when retrieval yields hits; deterministic mapping + parity + coverage gates remain authoritative. | If ChromaDB is missing or `APPNOVA_RAG_ENABLED=0`, the pipeline behaves identically to pre-RAG. |
 
 ---
 
-## 🤖 The 12 specialist agents
+## 🤖 The 14 specialist agents
 
-Each agent is registered in [`backend/agents/config.py`](backend/agents/config.py) and has a system prompt in [`backend/agents/prompts.py`](backend/agents/prompts.py). The supervisor layers them into execution waves by `AgentSpec.upstream` dependencies — wave 0 runs every agent that has no upstream in parallel; later waves wait for their inputs.
+Every agent is registered in [`backend/config.py`](backend/config.py) (`AGENT_REGISTRY`). All tiers pin to **Claude Sonnet 4.6** by default so demo-freeze replays are byte-for-byte reproducible. Override per-tier via `HEAVY_MODEL` / `LIGHT_MODEL` / `DISCOVERY_MODEL`.
 
-| Agent ID | Tier | Wave | Upstream deps |
+| Agent ID | Tier | Wave | Output |
 |---|---|---|---|
-| `code-analysis` | heavy | 0 | — |
-| `architecture` | heavy | 0 | — |
-| `business-rules` | heavy | 0 | — |
-| `security` | heavy | 0 | — |
-| `migration-planner` | heavy | 0 | — |
-| `documentation` | light | 0 | — |
-| `devops` | light | 0 | — (skipped if no Docker/CI signals) |
-| `data-migration` | light | 0 | — (skipped if no SQL/ORM signals) |
-| `integration` | light | 0 | — |
-| `code-generation` | heavy | 1 | all of wave 0 |
-| `testing` | light | 2 | code-generation |
-| `ui-ux` | heavy | 2 | code-generation |
+| `discovery` | heavy | 0 | Tech inventory, narrative overview, per-agent context briefs |
+| `code-analysis` | heavy | 1 | Module graph, complexity, tech debt, ER diagram |
+| `architecture` | heavy | 1 | Layer map, Mermaid flowcharts, ADRs |
+| `business-rules` | heavy | 1 | Rules catalog, validation matrix, per-workflow state machines |
+| `security` | heavy | 1 | OWASP mapping, secrets scan, auth audit |
+| `integration` | light | 1 | External API touchpoints, retry/circuit patterns, target-stack bindings |
+| `data-migration` | light | 1 | Schema map, target ER diagram, migration SQL/ORM scripts |
+| `devops` | light | 1 | Dockerfiles, CI YAML, IaC, monitoring (reads `deploy_config.json` + canonical templates) |
+| `migration-planner` | heavy | 2 | Phases, gantt, risks, **Section A file-by-file blueprint + `file_map.json`** |
+| `code-generation` | heavy | 3 | Full target-stack project in `converted/` (chunked multipass when `APPNOVA_CODEGEN_MULTIPASS=true`) |
+| `documentation` | light | 3 | Real `docs/README.md`, `docs/SETUP.md`, `docs/DEPLOY.md`, `docs/API.md`, `docs/DATA_DICTIONARY.md` written **into the converted tree** |
+| `code-review` | heavy | 4 | Gap + fidelity audit against `file_map.json` (requires code-generation) |
+| `testing` | light | 4 | Unit + integration + E2E scaffolds in target-stack conventions |
+| `ui-ux` | heavy | 4 | Navigation tree flowchart, component polish, SCSS migration |
 
-**Tiers → models** (override with `HEAVY_MODEL` / `LIGHT_MODEL` / `DISCOVERY_MODEL` env vars):
+### After-the-agents auditors (deterministic, zero LLM cost)
 
-- `heavy` → `claude-sonnet-4-6`
-- `light` → `claude-haiku-4-5-20251001`
-- discovery pass → `claude-haiku-4-5-20251001`
-
-**Execution model** — the runner streams stream-json tool-call events per agent. The frontend receives them as `agent_start` / `assistant` (with tool_calls) / `tool_result` / `agent_complete`. Legacy-shape `{type: start|complete|error}` events are emitted in parallel so the existing React code keeps working without changes.
+| Auditor | When | Effect |
+|---|---|---|
+| [`file_coverage`](backend/agents/file_coverage.py) | post `code-generation` | Coverage %. Downgrades to `error` when < 70% (override: `APPNOVA_COVERAGE_FLOOR`). |
+| [`deploy_audit`](backend/agents/deploy_audit.py) | post `code-generation` | 8 literal leaks + 5 regex patterns (Azure AD GUID, secret-token, Server=Password=, User Id=, Azure FQDN). Writes `docs/DEPLOY_AUDIT.md`. |
+| [`quarantine_leaks`](backend/agents/deploy_audit.py) | when `APPNOVA_QUARANTINE_LEAKS=true` (default on) | Rewrites each leak: literal → user-supplied value OR `__FIELDNAME__` placeholder. |
+| [`render_secrets_mapping`](backend/agents/deploy_audit.py) | always after deploy_audit | `docs/SECRETS_MAPPING.md` — one row per placeholder with `az keyvault` + `dotnet user-secrets` fill commands. |
+| [`context_attestation` scan](backend/agents/supervisor.py) | post each agent (except migration-planner) | Classifies `## Context` block as `full / partial / gap / weak / missing`. Painted as chip on each card. |
+| [`enrich_file_map_from_context`](backend/agents/synthesize_file_map.py) | post `migration-planner` | Deterministic union of planner's map with `field_inventory.json` + `source_routes.json` + stylesheet walker. Auto-augmented rows carry `_disk_inferred=true`. |
+| [`write_source_route_manifest`](backend/agents/source_routes.py) | pre `migration-planner` | Walks source for state/path/page declarations (AngularJS ui-router, React Router, Vue, Blazor, ASP.NET, Rails, Laravel, Django). Writes `context/source_routes.json`. |
 
 ---
 
-## 🔄 Per-file conversion pipeline (flagship v1 feature)
+## 📚 Playbook + RAG layer
 
-Still available via `/api/convert/{session_id}` — converts every source file in the uploaded codebase 1:1 into your target stack, with **full caching, resumability, and parallelism**.
+### Playbook system
 
-- **Planner** ([`tools/conversion_planner.py`](backend/tools/conversion_planner.py)) groups files by the first two directory segments so a domain module's files convert with mutual context. Hard caps at **8 files / 60 KB per batch** so a single batch always fits one LLM prompt with headroom for ~1.5× output.
-- **Runner** ([`tools/conversion_runner.py`](backend/tools/conversion_runner.py)) executes batches with bounded concurrency (1–12 parallel), persists an atomic manifest at `uploads/{sid}/conversion/manifest.json`, and keys each batch by SHA256 of `(prompt version, target stack, source paths + content hashes)`.
-- **Failure isolation** — one failed batch never blocks the rest. Re-running picks up exactly the failed batches.
-- **Prompt-version bump** in `conversion_runner.py` invalidates the entire cache automatically.
-- **UI** — [`ConversionPanel.tsx`](frontend_react/src/components/ConversionPanel.tsx) gives you Start/Resume, Retry Failed, Force Full Re-run, Stop, plus live progress counters, status filter chips, and per-batch collapsible details.
+A `PlaybookDefinition` ([`backend/playbooks/schema.py`](backend/playbooks/schema.py)) is six frozen dataclasses:
 
-The v2 `code-generation` agent is a simpler alternative: one subprocess writes the whole target project in `uploads/{sid}/converted/` using Claude Code's Write/Edit tools directly, with `--add-dir` pointing at the source tree.
+| Layer | Dataclass | Purpose |
+|---|---|---|
+| 1 | `PlaybookMapping` | Source ↔ target field/type mapping, synonym pairs, ignored-field regex |
+| 2 | `PlaybookTransformation` | `codegen_style`, global `prompt_preamble`, per-agent `agent_hints` |
+| 3 | `PlaybookValidation` | `coverage_floor_pct`, `parity_green_floor_pct`, `require_round_trip` |
+| 4 | `PlaybookWorkflow` | `skip_agent_ids`, `extra_agent_ids`, `fail_fast`, `round_trip_mode` |
+| 5 | `PlaybookFeedback` | Report formats, cost-report toggle, post-step hook IDs |
+| 6 | `PlaybookRAG` | RAG kill-switch + retrieval policy (per-playbook) |
+
+Registered playbooks ([`backend/playbooks/registry.py`](backend/playbooks/registry.py)):
+
+| Playbook ID | Source | Target |
+|---|---|---|
+| `laravel-to-dotnet` | Laravel PHP + Eloquent + Blade | .NET 8 Minimal API + React 18 TS |
+| `angularjs-to-react` | AngularJS 1.x ($scope / $http / ui-router) | React 18 + TS + Hook Form + Router v6 |
+| `react-upgrade` | React class components / vanilla JS | React 18 functional + TS strict |
+| `generic` | Any unrecognised stack | Stack-agnostic agent hints |
+
+`resolve_playbook(upload_dir)` scores every playbook against the file tree via `fnmatch` on `source_signals`. Best match wins (falls back to `GENERIC_PLAYBOOK`). Context is injected into every agent prompt as a `## PLAYBOOK GUIDANCE — <source> → <target>` block.
+
+### RAG (ChromaDB, optional)
+
+Three collections per playbook in one persistent ChromaDB store under `<repo>/chroma/`:
+
+| Collection | Source | Lifetime | Trust |
+|---|---|---|---|
+| `{playbook}__curated` | Hand-authored source→target pairs (JSONL seeds) | Permanent, version-controlled | High — retrieved first |
+| `{playbook}__learned` | Auto-stored verified conversions (gated by parity ≥ floor + supervisor_ok) | Permanent | Medium — fallback after curated |
+| `{playbook}__source__{sid}` | Chunks of the current upload | Per-session, deleted on session close | Context-only |
+
+Disable entirely with `APPNOVA_RAG_ENABLED=0`. When chromadb is unimportable the layer gracefully no-ops.
 
 ---
 
-## 🌐 Complete API surface
+## 🧮 Eval harness
 
-All routes live in [`backend/main.py`](backend/main.py). Every route is tagged for OpenAPI; Swagger UI is served at `http://127.0.0.1:8000/docs`.
+```bash
+python -m backend.harness score <session_root>       # one session
+python -m backend.harness score-all [--csv out.csv]  # all sessions under uploads/
+python -m backend.harness diff baseline.csv new.csv  # Δ table with REGR/IMPR/SAME pills
+```
 
-### System & models
-| Method | Route | Purpose |
-|---|---|---|
-| GET | `/health` | Liveness + provider info |
-| GET | `/api/server-instance` | Unique server-instance id (UI reconnect hint) |
-| GET | `/api/logs/stream` | SSE log broadcast |
-| GET | `/api/models` | All available LLM models across providers |
-| GET | `/api/models/freshness` | Check per-provider API availability |
-| GET | `/api/agents` | List agent ids loaded from `skills/` |
+Gates checked: `file_coverage ≥ 70%`, `deploy_audit.leak_count == 0`, `context_attestation.verdict == 'full'`. Cost: zero LLM calls (pure file I/O). CI integration:
 
-### Upload & indexing
-| Method | Route | Purpose |
-|---|---|---|
-| POST | `/api/upload` | Multipart upload (folder drag-drop) |
-| POST | `/api/upload/github` | Clone and index a GitHub repo |
-| GET | `/api/index-status/{session_id}` | Chunk-indexing progress |
-| POST | `/api/index-stop/{session_id}` | Cancel indexing |
-| POST | `/api/index-resume/{session_id}` | Resume paused indexing |
-| GET | `/api/session/{session_id}/file` | Read a single file |
-| GET | `/api/session/{session_id}/repo-knowledge` | Static parse summary |
-
-### Analysis & chat
-| Method | Route | Purpose |
-|---|---|---|
-| **POST** | **`/api/analyze-v2`** | **SSE — v2 subscription-backed DAG runner (default in UI)** |
-| POST | `/api/analyze` | Legacy — LangGraph + API keys (rollback only) |
-| POST | `/api/analyze/stream` | Legacy SSE variant |
-| **POST** | **`/api/chat`** | **Claude Code primary; LangGraph fallback** |
-| GET | `/api/chat/stream` | Legacy SSE token stream (still on LLM cascade) |
-| POST | `/api/chat/agent-stream` | Chat against a specific agent's report |
-| POST | `/api/chat/attach` | Attach code snippets to chat |
-| POST/GET | `/api/chat/history/{session_id}` | Save / fetch chat history |
-
-### Code generation & conversion
-| Method | Route | Purpose |
-|---|---|---|
-| POST | `/api/code/save` | Save edited generated file |
-| GET | `/api/code/files/{session_id}` | List generated files |
-| GET | `/api/code/download/{session_id}` | Zip of generated project |
-| POST | `/api/convert/{session_id}` | Per-file conversion (SSE) |
-| GET | `/api/convert/{session_id}/manifest` | Conversion manifest summary |
-| POST | `/api/generated/run/{session_id}` | Execute generated code in sandbox |
-
-### Preview & diff
-| Method | Route | Purpose |
-|---|---|---|
-| POST | `/api/preview/start/{session_id}` | Start self-healing dev-server preview |
-| POST | `/api/preview/stop/{session_id}` | Stop preview |
-| GET | `/api/preview/status/{session_id}` | Live status + log tail |
-| POST | `/api/diff` | Produce side-by-side diff payload |
-| GET | `/api/artifact/{session_id}` | Fetch inline UI/UX artifact HTML |
-| GET | `/api/artifact/{session_id}/meta` | Artifact metadata |
-
-### Brain, skills, hooks
-| Method | Route | Purpose |
-|---|---|---|
-| GET | `/api/brain/{session_id}` | Fetch `PROJECT.md` brain |
-| PUT | `/api/brain/{session_id}/notes` | Save notes |
-| POST | `/api/brain/{session_id}/regenerate` | Regenerate summary |
-| GET/POST | `/api/skills` | List / upload skill prompts |
-| GET | `/api/skills/{agent_id}` | Skill for a specific agent |
-| GET | `/api/hooks` | Installed pre/post hooks |
-
-### Export, session, cache
-| Method | Route | Purpose |
-|---|---|---|
-| POST | `/api/export` | Generate `.md` or `.docx` report |
-| GET | `/api/export/download/{filename}` | Download exported file |
-| POST | `/api/refactor` | Legacy refactor endpoint |
-| POST | `/api/execute` | Execute code in sandbox |
-| POST | `/api/requirements` | Infer requirements doc |
-| GET | `/api/session/{session_id}` | Session metadata |
-| GET | `/api/session/{session_id}/files` | Uploaded file list |
-| DELETE | `/api/session/{session_id}` | Delete session + data |
-| POST | `/api/session/{session_id}/refresh` | Re-index without re-upload |
-| GET | `/api/session/{session_id}/state` | Analysis state |
-| POST | `/api/session/{session_id}/cancel-agent/{agent_id}` | Stop a running agent |
-| GET | `/api/session/{session_id}/events` | Session event log |
-| GET | `/api/cache/stats` | Fingerprint-cache hit rates |
-| GET | `/api/active-session` | Spectator-mode current session |
-
----
-
-## 🔁 LLM fallback cascade (backup path)
-
-When the Claude Code subscription is unavailable (CLI missing, rate-limited, or the bridge returns an error), AppNova falls through to the legacy cascade in [`backend/core/llm.py`](backend/core/llm.py):
-
-1. **Claude API** (Tier 2) — up to 5 keys, 300 s max cooldown (Tier-2 resets in 5 min)
-2. **Gemini 2.5 Flash** — up to 9 keys, grouped by project
-3. **Groq Llama 3.3 70B** — up to 11 keys
-4. **Ollama** (local) — qwen-32k / deepseek-coder-v2 / llama3.2 / mistral — final fallback that never rate-limits
-
-**Key rotation rules**
-
-- **429 / rate-limit** → cool this key, rotate to next key on same provider.
-- **Daily quota exhausted** → 24 h cooldown (Gemini) / 1 h (Groq).
-- **401 / invalid key** → rotate with explicit cooldowns (Claude 300 s, Gemini/Groq 1800 s).
-- **All keys cold on this provider** → fall to next provider.
-- **All providers cold** → fall to Ollama; if Ollama fails, raise.
-
-**Cancellation** is honored at three safe checkpoints: before an agent starts, between key rotations inside a tier, and between fallback tiers. An already-submitted HTTP request still finishes — that's the only thing the runtime can't interrupt.
-
-**Fingerprint caching** ([`backend/core/fingerprint.py`](backend/core/fingerprint.py)): every analysis result is keyed by `(pipeline_fp, codebase_fp, agent_id)`. `pipeline_fp` is now **per-agent scoped** — editing `skills/security.md` only invalidates the security agent's cache, not every agent's.
+```yaml
+- run: python -m backend.harness score-all --csv eval.csv --exit-on-fail
+```
 
 ---
 
@@ -281,100 +206,141 @@ When the Claude Code subscription is unavailable (CLI missing, rate-limited, or 
 
 ### Requirements
 
-- **Python 3.11.9** (exact version, verified by `start_appnova.bat`)
+- **Python 3.11** (exact major.minor; verified by `start.bat`)
 - **Node.js 18+**
-- **Git**
-- **Claude Code CLI** — `npm install -g @anthropic-ai/claude-code` (for v2)
-- **Claude Code Max subscription** with `claude login` completed (for v2)
-- *(Optional)* API keys for Claude / Gemini / Groq, or a running Ollama server — only needed if the v2 subscription path fails.
+- **Claude Code CLI** — `npm install -g @anthropic-ai/claude-code` with `claude login` (Max subscription)
+- **Playwright Chromium** — `playwright install chromium` (Mermaid prerender + PDF export)
+- **ChromaDB** — installed via `requirements.txt` (RAG layer; degrades to no-op if missing)
 
 ### Windows — one-command start
 
 ```powershell
-.\start_appnova.bat
+.\start.bat
 ```
 
 The launcher:
 
-1. Verifies Python 3.11.9.
-2. Creates `backend/venv` and installs `backend/requirements.txt`.
-3. Starts FastAPI on `http://127.0.0.1:8000` **without `--reload`** (uvicorn's reloader forces `WindowsSelectorEventLoopPolicy`, which breaks `asyncio.create_subprocess_exec` — see Hotfix 3 in [changes.md](changes.md)).
-4. Starts Vite dev server on `http://localhost:5173`.
-5. Opens the UI in your browser.
+1. Verifies Python 3.11 and creates `backend/venv`.
+2. Installs `backend/requirements.txt`.
+3. Starts FastAPI on **`http://127.0.0.1:8002`** without `--reload` (uvicorn's reloader forces `WindowsSelectorEventLoopPolicy`, breaking `asyncio.create_subprocess_exec` — see `changes.md`).
+4. Serves the static `frontend/` on **`http://127.0.0.1:5500`** via `http.server`.
+5. Opens `login.html` in your browser.
 
-Stop with `.\start_appnova.bat stop` (kills port 8000 listener + Node + Ollama).
+Stop with `.\start.bat stop`.
 
 ### macOS / Linux — manual start
 
 ```bash
-# Backend — NO --reload when using v2; Proactor/epoll default is correct
 cd backend
 python3.11 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
-uvicorn main:app --host 127.0.0.1 --port 8000
+playwright install chromium
+uvicorn main:app --host 127.0.0.1 --port 8002
 
-# Frontend (in another terminal)
-cd frontend_react
-npm install
-npm run dev
+# Serve frontend (another terminal)
+cd frontend
+python3 -m http.server 5500
 ```
 
 ### Environment variables
 
-Create a `.env` in the project root (v2 path needs zero API keys; all cascade keys are optional):
+Create a `.env` in the project root:
 
 ```ini
-# ── v2 Claude Code CLI runner ──
-# CLAUDE_CODE_PATH=claude            # defaults to `claude`; override if not on PATH
-# HEAVY_MODEL=claude-sonnet-4-6      # heavy-tier agents (arch/security/code-gen/…)
-# LIGHT_MODEL=claude-haiku-4-5-20251001   # light-tier agents (docs/devops/…)
-# DISCOVERY_MODEL=claude-haiku-4-5-20251001
-# AGENT_TIMEOUT=86400                # 24h default (matches Claude Code session ceiling)
-# DISCOVERY_TIMEOUT=86400
-# APPNOVA_MIGRATION_PLANNER_REPAIR=0 # set to 1 to re-enable strict-contract repair pass
+# ── Claude Code CLI ──
+CLAUDE_CODE_PATH=claude                   # or absolute path e.g. C:\Users\Public\npm-global\claude.cmd
+HEAVY_MODEL=claude-sonnet-4-6
+LIGHT_MODEL=claude-sonnet-4-6
+DISCOVERY_MODEL=claude-sonnet-4-6
+AGENT_TIMEOUT=1200                        # seconds per agent (24h for long monoliths)
+DISCOVERY_TIMEOUT=480
+SERVER_PORT=8002
 
-# ── v1 LLM fallback cascade (only used when v2 path fails) ──
-LLM_PROVIDER=auto                    # auto | claude | gemini | groq | ollama
+# ── Code-gen multipass ──
+APPNOVA_CODEGEN_MULTIPASS=true            # chunk file_map.json into 50-row slices
+APPNOVA_CODEGEN_CHUNK_SIZE=50            # rows per chunk
+APPNOVA_CODEGEN_COOLDOWN_SECONDS=30      # sleep between chunks (max 270s for cache TTL)
 
-# Claude API keys (up to 5; leave unused slots blank)
-CLAUDE_API_KEY=
-CLAUDE_API_KEY_2=
-CLAUDE_MODEL=claude-sonnet-4-6
-CLAUDE_CACHE_TTL=5m                  # 5m or 1h
+# ── Quality gates ──
+APPNOVA_COVERAGE_FLOOR=70                 # % minimum file-coverage before code-gen downgrades
+APPNOVA_QUARANTINE_LEAKS=true            # auto-rewrite leak literals to __FIELDNAME__ placeholders
+APPNOVA_MIGRATION_PLANNER_REPAIR=0       # 1 = re-enable strict repair pass (default off)
 
-# Gemini (up to 9 keys, grouped by project)
-GEMINI_API_KEY=
-GEMINI_API_KEY_2=
+# ── RAG layer ──
+APPNOVA_RAG_ENABLED=1                    # 0 to disable ChromaDB entirely
+APPNOVA_RAG_DIR=./chroma                 # persistent Chroma store path
 
-# Groq (up to 11 keys)
-GROQ_API_KEY=
-GROQ_API_KEY_2=
+# ── Playwright (shared machine-wide install) ──
+PLAYWRIGHT_BROWSERS_PATH=C:\Users\Public\ms-playwright
 
-# Ollama (local fallback, no key needed)
-OLLAMA_BASE_URL=http://localhost:11434
-OLLAMA_MODEL=qwen-32k
-OLLAMA_USE_GPU=true
-
-# Embeddings (v1 only)
-EMBEDDING_MODEL_PATH=./models/jina-embeddings-v2-base-code
-FORCE_CPU_EMBEDDINGS=false
+# ── Director mode (optional) ──
+APPNOVA_DIRECTOR_MODE=0                  # 1 = Claude decides which subagents to spawn
 ```
 
 ---
 
-## 🧭 Typical workflow
+## 🌐 API surface
 
-1. **Upload** — drop a folder into the UI, or paste a GitHub URL. AppNova extracts to `uploads/{sid}/files/`.
-2. **Analyze** — pick one or more agents from the sidebar. The UI posts to `/api/analyze-v2`. Behind the scenes:
-   a. Session adapter mirrors `files/` → `source/` and detects the project root (`package.json`, `pom.xml`, `.csproj`, etc.).
-   b. One discovery `claude -p` call (Haiku) writes `context/digest.md` + `context/brief_<agent>.md`.
-   c. Supervisor dispatches wave 0 — up to 9 agents run `claude -p` subprocesses in parallel. Each has Read/Glob/Grep on the source dir.
-   d. Wave 1 dispatches `code-generation` (writes converted/); wave 2 dispatches `testing` + `ui-ux` in parallel.
-3. **Chat** — ask follow-ups. The chat bridge tries Claude Code first; on failure falls through to the LangGraph chat graph.
-4. **Generate or convert** — v2 `code-generation` writes a full target-stack project under `uploads/{sid}/converted/`. Or use the legacy **Convert** tab for per-file 1:1 batched conversion.
-5. **Preview** — one-click self-healing dev-server launcher runs the generated project in-browser.
-6. **Export** — one click produces a `.docx` or `.md` report combining every agent's output.
+All routes live in [`backend/main.py`](backend/main.py). Swagger UI at `http://127.0.0.1:8002/docs`.
+
+### Core analysis
+
+| Method | Route | Purpose |
+|---|---|---|
+| POST | `/api/upload` | Multipart upload (folder drag-drop or zip) |
+| POST | `/api/upload/github` | Clone and index a GitHub repo |
+| POST | `/api/analyze/{session_id}` | SSE — DAG wave runner (primary) |
+| GET | `/api/session/{session_id}/status` | Run status + `run_started_at` / `run_finished_at` |
+| POST | `/api/session/{session_id}/cancel-agent/{agent_id}` | Stop a running agent |
+
+### Chat & code-fix
+
+| Method | Route | Purpose |
+|---|---|---|
+| POST | `/api/chat/{session_id}/{agent_id}` | Per-card chat (report or code-fix mode) |
+| GET | `/api/session/{session_id}/snapshots` | List per-turn snapshots of `converted/` |
+
+### Deploy config
+
+| Method | Route | Purpose |
+|---|---|---|
+| GET | `/api/session/{session_id}/deploy-config` | Fetch 24-field deploy form + warnings |
+| POST | `/api/session/{session_id}/deploy-config` | Save + materialise to `source/context/deploy_config.json` |
+
+### Export & review
+
+| Method | Route | Purpose |
+|---|---|---|
+| GET | `/api/export/{session_id}/{agent_id}.md` | Re-download markdown |
+| GET | `/api/export/{session_id}/{agent_id}.docx` | Re-download DOCX |
+| GET | `/api/export/{session_id}/{agent_id}.pdf` | Re-download PDF |
+| GET | `/api/review/{session_id}/file` | Fetch source + target file pair for diff view |
+| GET | `/api/mermaid/render` | Server-side SVG render (Playwright cache) |
+
+### Demo sessions
+
+| Method | Route | Purpose |
+|---|---|---|
+| POST | `/api/demo-sessions/freeze/{session_id}` | Snapshot a completed run |
+| GET | `/api/demo-sessions` | List frozen demos |
+| POST | `/api/demo-sessions/load/{demo_id}` | Restore a demo snapshot |
+| DELETE | `/api/demo-sessions/{demo_id}` | Remove a demo |
+
+### RAG
+
+| Method | Route | Purpose |
+|---|---|---|
+| POST | `/api/rag/seed` | Seed `__curated` from JSONL examples |
+| GET | `/api/rag/stats` | Collection sizes + hit counts |
+
+### Eval harness (CLI only — no HTTP endpoint)
+
+```bash
+python -m backend.harness score <session_root>
+python -m backend.harness score-all [--uploads-dir uploads/] [--csv out.csv] [--exit-on-fail]
+python -m backend.harness diff baseline.csv new.csv [--exit-on-regression]
+```
 
 ---
 
@@ -383,63 +349,61 @@ FORCE_CPU_EMBEDDINGS=false
 ```text
 AppNova/
 ├── backend/
-│   ├── main.py                      ← FastAPI entry; all routes (incl. /api/analyze-v2)
-│   ├── config.py                    ← Pydantic settings (v1 env vars)
-│   ├── requirements.txt             ← Backend deps
-│   ├── agents/                      ← v2 runner package (NEW)
-│   │   ├── config.py                ← 12-agent registry + tier→model map
-│   │   ├── runner.py                ← `claude -p` subprocess + threaded pipes
-│   │   ├── supervisor.py            ← DAG wave scheduler + per-cwd lock
+│   ├── main.py                      ← FastAPI entry; all routes (:8002)
+│   ├── config.py                    ← 14-agent AGENT_REGISTRY + tier→model map
+│   ├── requirements.txt             ← Backend deps (incl. playwright, chromadb)
+│   ├── agents/                      ← Agent runner package
+│   │   ├── config.py                ← AgentSpec registry (mirrors backend/config.py)
+│   │   ├── runner.py                ← `claude -p` subprocess + threaded pipes + Windows shim
+│   │   ├── supervisor.py            ← DAG wave scheduler + post-run auditors + per-cwd lock
 │   │   ├── state.py                 ← RunState TypedDict blackboard
-│   │   ├── director.py              ← Alt: Claude-driven Task-tool dispatch
-│   │   ├── orchestrator.py          ← Alt: single-session orchestrator
-│   │   ├── prompts.py               ← DISCOVERY_PROMPT + AGENT_PROMPTS
-│   │   ├── session_adapter.py       ← files/ → source/ + root detection
-│   │   ├── v2_to_report_data.py     ← Runner results → document_generator
-│   │   ├── chat_bridge.py           ← /api/chat → claude -p (Read/Glob/Grep)
-│   │   ├── artifact.py / scaffold.py / sample_data.py / diagram_qa.py / export.py
-│   ├── core/
-│   │   ├── llm.py                   ← v1 4-provider fallback + key rotation
-│   │   ├── cost_tracker.py          ← Per-agent virtual-cost ledger (NEW)
-│   │   ├── model_pricing.yaml       ← Claude model prices for ledger (NEW)
-│   │   ├── tracing.py               ← Structured span logger → SQLite (NEW)
-│   │   ├── fingerprint.py           ← Pipeline × codebase cache keys
-│   │   ├── chromadb_client.py       ← Vector store wrapper (v1 only)
-│   │   ├── prompts.py               ← v1 prompt templates
-│   │   ├── skill_loader.py          ← Hot-loads skills/*.md
-│   │   └── logger.py                ← Loguru + SSE broadcaster
-│   ├── mcp_server/                  ← MCP stdio server exposing traces (NEW)
-│   │   └── trace_server.py          ← `claude mcp add appnova-traces`
-│   ├── graphs/                      ← v1 LangGraph pipelines (fallback only)
-│   │   ├── analysis_graph.py
-│   │   ├── chat_graph.py
-│   │   └── diff_graph.py
-│   ├── skills/                      ← 12 agent Markdown prompts (v1; v2 uses agents/prompts.py)
-│   ├── tools/                       ← Upload, code-exec, document-gen, conversion
-│   ├── api/                         ← Pydantic schemas & sub-routers
-│   ├── hooks/                       ← Pre/post processing hooks
-│   ├── data/                        ← (gitignored) cost_tracking.db
-│   └── chroma_data/                 ← (gitignored) vector store
-├── frontend_react/
-│   ├── src/
-│   │   ├── App.tsx                  ← Root layout, tab bar
-│   │   ├── main.tsx                 ← React entry
-│   │   ├── services/api.ts          ← HTTP + SSE clients (now /api/analyze-v2)
-│   │   ├── contexts/AppContext.tsx  ← Global session state
-│   │   └── components/              ← Sidebar, ReportView, ChatView, …
-│   ├── package.json
-│   └── vite.config.ts
-├── .claude/                         ← Project-scoped Claude Code config (NEW)
-│   ├── settings.json                ← Permission allowlist + PostToolUse hooks
-│   ├── hooks/remind.sh              ← Nudge to keep changes.md current
-│   └── skills/log-change/           ← Project skill: prepend-to-changes
-├── AGENTS.md                        ← Human-readable agent contract (NEW)
+│   │   ├── prompts.py               ← DISCOVERY_PROMPT + AGENT_PROMPTS + build_agent_prompt
+│   │   ├── session_adapter.py       ← files/ → source/ + project-root detection
+│   │   ├── deploy_audit.py          ← Literal + regex leak scanner + quarantine pass + secrets-mapping
+│   │   ├── deploy_templates/        ← 9 canonical deploy templates (systemd, apache, nginx, IIS, etc.)
+│   │   ├── file_coverage.py         ← Source→target coverage audit
+│   │   ├── source_routes.py         ← 9-framework route detector → source_routes.json
+│   │   ├── synthesize_file_map.py   ← file_map.json enrichment (field_inventory + routes + stylesheets)
+│   │   ├── codegen_multipass.py     ← Chunked code-gen runner (50-row slices + crash-resume)
+│   │   ├── parity_checker.py        ← Field-level parity between source and converted
+│   │   ├── round_trip_tester.py     ← Automated live or plan round-trip validation
+│   │   ├── migration_pipeline.py    ← Post-agent deterministic pipeline (field_extractor→parity→rag-learn)
+│   │   ├── browser_test.py          ← Playwright browser-test dispatcher
+│   │   ├── chat.py                  ← Per-card chat + code-fix mode + snapshot logic
+│   │   ├── artifact.py / export.py  ← HTML artefacts + md→html→docx/pdf export
+│   │   ├── mermaid_renderer.py      ← Playwright Mermaid SVG/PNG cache
+│   │   ├── director.py              ← Alt: Claude-driven Task-tool dispatch (APPNOVA_DIRECTOR_MODE=1)
+│   │   └── example_deploy_config.json ← Synthetic fixture for prompt examples
+│   ├── playbooks/
+│   │   ├── schema.py                ← 6-layer PlaybookDefinition dataclasses
+│   │   ├── registry.py              ← PLAYBOOK_REGISTRY + resolve_playbook() + get_playbook()
+│   │   ├── examples/                ← Curated JSONL seeds (per playbook)
+│   │   └── rag/
+│   │       └── client.py            ← Chroma persistent client + collection accessors
+│   ├── harness/
+│   │   ├── eval.py                  ← EvalScorecard + score_session + write_scorecard_csv
+│   │   └── cli.py                   ← score / score-all / diff / run subcommands
+│   ├── cost_tracker.py              ← Per-agent virtual-cost ledger → 5-sheet .xlsx
+│   ├── model_pricing.yaml           ← Claude model prices for ledger
+│   ├── auth.py                      ← JWT authentication layer
+│   ├── projects.py                  ← Project management helpers
+│   ├── dev_chat.py                  ← Development chat utility
+│   └── analysis_cache.py            ← Result fingerprint caching
+├── frontend/                        ← Static HTML/JS — no build step
+│   ├── hub.html / hub.js            ← Project hub (list, create, open sessions)
+│   ├── index.html / app.js          ← Main workspace (agent cards, SSE stream, deploy form)
+│   ├── review.html / review.js      ← Side-by-side source↔target diff view
+│   ├── login.html / login.js        ← JWT login flow
+│   ├── style.css                    ← All styles
+│   └── theme.js                     ← Dark/light theme toggle
+├── demo_sessions/                   ← (gitignored) frozen run snapshots
 ├── uploads/                         ← (gitignored) per-session files
+├── exports/                         ← (gitignored) auto-generated .md/.docx/.pdf reports
+├── chroma/                          ← (gitignored) ChromaDB persistent store
+├── data/                            ← (gitignored) cost_tracking.db
 ├── logs/                            ← (gitignored) Loguru output + agent dumps
-├── exports/                         ← (gitignored) generated .docx/.md reports
-├── start_appnova.bat                ← Windows launcher (no --reload; Hotfix 3)
-├── changes.md                       ← Current changelog (2026-04-21 = v2 port)
-├── changes_2026-04-14.md            ← Prior changelog (archive)
+├── start.bat                        ← Windows launcher (no --reload; port 8002)
+├── changes.md                       ← Reverse-chronological change log
 └── LICENSE                          ← MIT
 ```
 
@@ -447,38 +411,44 @@ AppNova/
 
 ## 🧪 Tech stack
 
-**v2 runner** — Python `subprocess.Popen` + threaded pipes · `@anthropic-ai/claude-code` (npm global) · `shutil.which` shim resolution · `asyncio.Queue` via `loop.call_soon_threadsafe` · `CREATE_NO_WINDOW` on Windows.
+**Agent runner** — Python `subprocess.Popen` + threaded pipes · `@anthropic-ai/claude-code` (npm global, 2.1.x native binary at `bin/claude.exe`) · `shutil.which` shim resolution · `asyncio.Queue` via `loop.call_soon_threadsafe` · `CREATE_NO_WINDOW` on Windows.
 
-**Backend** — FastAPI 0.115 · Uvicorn 0.31 · LangChain 0.3 · LangGraph 1.0 · ChromaDB 1.5 · sentence-transformers 2.7 · python-docx 1.1 · markdown2 · loguru · python-multipart · Pygments · openpyxl 3.1 (cost report) · PyYAML 6.0.
+**Backend** — FastAPI 0.115 · Uvicorn 0.32 · python-docx 1.1 · Playwright 1.47 (Mermaid prerender + PDF) · loguru · openpyxl 3.1 (cost workbook) · PyYAML 6.0 · chromadb 0.5 (RAG, optional).
 
-**Frontend** — React 18.3 · TypeScript 5.9 · Vite 8.0 · Tailwind 4.2 · Monaco Editor 4.7 · Mermaid 11.14 · react-markdown 9.0 · remark-gfm 4.0 · react-syntax-highlighter 15.5 · axios 1.14.
+**Frontend** — Static HTML5 + vanilla JS (no build step) · Multiple-page app (`hub`, `index`, `review`, `login`).
 
-**LLM SDKs** — `@anthropic-ai/claude-code` CLI (primary) · langchain-anthropic · langchain-google-genai · langchain-groq · langchain-ollama · langchain-openai (extensibility).
-
----
-
-## 🔌 MCP integration (bonus)
-
-[`backend/mcp_server/trace_server.py`](backend/mcp_server/trace_server.py) is a local stdio MCP server exposing AppNova's trace SQLite read-only. Register it once and Claude Code CLI sessions can query your backend telemetry directly:
-
-```powershell
-pip install mcp
-claude mcp add appnova-traces -- python -m mcp_server.trace_server
-```
-
-Exposed tools: `list_sessions`, `get_session`, `get_node_runs`, `get_errors`, `get_token_usage`.
+**Auth** — JWT via `backend/auth.py`; login.html handles OAuth flow.
 
 ---
 
-## 🧑‍💻 Contributing
+## 🧭 Typical workflow
+
+1. **Login** — open `login.html`, authenticate with your credentials (or skip for local single-user mode).
+2. **Hub** — open `hub.html`, click "New project", give it a name. The folder on disk becomes `<slug>-<session_id>`.
+3. **Upload** — drop a folder or paste a GitHub URL. AppNova extracts to `uploads/{slug-sid}/source/`.
+4. **Deploy config** — expand "Deployment Details" and fill in `app_canonical_name`, `db_name`, `public_fqdn`, Azure AD fields, Key Vault name, etc. Click Save. The JSON materialises to `source/context/deploy_config.json` for agents.
+5. **Analyze** — choose target stack, click "Run All Agents". The SSE stream delivers:
+   - Wave 0: discovery (tech inventory + per-agent briefs)
+   - Wave 1: 7 analytic agents in parallel (code-analysis, architecture, security, business-rules, integration, data-migration, devops)
+   - Wave 2: migration-planner (file_map.json contract)
+   - Wave 3: code-generation (writes `converted/`), documentation (writes `converted/docs/`)
+   - Wave 4: code-review, testing, ui-ux in parallel
+   - Wave 5: deterministic pipeline (parity, round-trip, rag-learn)
+6. **Review** — open `review.html` for the side-by-side source↔target diff view. Coverage chip, deploy-audit chip, and context-attestation chip on each agent card tell you at a glance how complete and leak-free the run was.
+7. **Chat / Fix** — click the Chat button on any agent card to ask follow-ups, request edits, or enter "Fix code" mode. Fix mode snapshots `converted/` before each edit so you can revert.
+8. **Export** — reports auto-export as `.md`, `.docx`, and `.pdf`. Download from the export panel or re-fetch via `/api/export/{sid}/{aid}.*`.
+9. **Freeze / Demo** — click "Freeze as demo" to snapshot the run into `demo_sessions/` for zero-token replay.
+
+---
+
+## 🔌 Contributing
 
 1. Fork & branch from `main`.
-2. **Add an agent** — extend `AGENT_REGISTRY` in [`backend/agents/config.py`](backend/agents/config.py) with a new `AgentSpec`, then add the system prompt in [`backend/agents/prompts.py`](backend/agents/prompts.py) under `AGENT_PROMPTS["your-agent"]`. Declare upstream deps; supervisor auto-layers it into the right wave.
-3. **Add a skill (v1 parallel)** — drop a Markdown file into `backend/skills/{agent-id}.md`; it's loaded on next request and bumps its own fingerprint.
-4. **Add a provider** — extend `backend/core/llm.py` `call_llm_with_fallback` (mirror the Claude/Gemini/Groq patterns for key-rotation + cooldown). The v2 path skips this chain entirely.
-5. Run the linters/tests you have locally, then open a PR.
+2. **Add an agent** — extend `AGENT_REGISTRY` in [`backend/config.py`](backend/config.py) with a new `AgentSpec`, then add the system prompt under `AGENT_PROMPTS` in [`backend/agents/prompts.py`](backend/agents/prompts.py). Declare `upstream` deps; supervisor auto-layers it into the right wave.
+3. **Add a playbook** — define a `PlaybookDefinition` in [`backend/playbooks/registry.py`](backend/playbooks/registry.py) with `source_signals`, `mapping`, `transformation`, `validation`, `workflow`, and `rag` layers. Add curated examples to `backend/playbooks/examples/<id>.jsonl` and seed with `POST /api/rag/seed`.
+4. **Extend the eval harness** — add threshold checks to [`backend/harness/eval.py`](backend/harness/eval.py)'s `_evaluate_thresholds`. The `score-all --exit-on-fail` flag is the CI hook.
 
-See recent architectural work in [`changes.md`](changes.md) (2026-04-21 section for the v2 port + 9 hotfixes) and the prior long-form changelog in [`changes_2026-04-14.md`](changes_2026-04-14.md).
+See [`changes.md`](changes.md) for the full reverse-chronological change log.
 
 ---
 
@@ -490,12 +460,9 @@ See recent architectural work in [`changes.md`](changes.md) (2026-04-21 section 
 
 ## 🔗 Related docs
 
-- [changes.md](changes.md) — v2 port (2026-04-21) + 9 hotfixes, reverse-chronological decision log
-- [AGENTS.md](AGENTS.md) — human-readable agent contract
-- [AppNova_Architecture.html](AppNova_Architecture.html) — interactive architecture overview
-- [AppNova_Architecture_Diagrams.html](AppNova_Architecture_Diagrams.html) — full mermaid diagram set
-- [AppNova_Workflow.html](AppNova_Workflow.html) — end-to-end workflow diagram
-- [APPNOVA_PIPELINE_AND_LLM_FALLBACK.md](APPNOVA_PIPELINE_AND_LLM_FALLBACK.md) — deep-dive on the fallback state machine
-- [APPNOVA_VS_CLAUDE_CODE_ROADMAP.md](APPNOVA_VS_CLAUDE_CODE_ROADMAP.md) — feature-parity roadmap
-- [IMPLEMENTATION_PLAN_CODE_RENDER.md](IMPLEMENTATION_PLAN_CODE_RENDER.md) — code-rendering/preview plan
-- Swagger UI — `http://127.0.0.1:8000/docs` (live API reference)
+- [changes.md](changes.md) — Full reverse-chronological change log
+- [AppNova_Architecture.html](AppNova_Architecture.html) — Interactive architecture overview
+- [AppNova_Architecture_Diagrams.html](AppNova_Architecture_Diagrams.html) — Mermaid diagram set
+- [AppNova_Workflow.html](AppNova_Workflow.html) — End-to-end workflow diagram
+- [AppNova_Complete_Architecture.html](AppNova_Complete_Architecture.html) — Deep-dive architecture
+- Swagger UI — `http://127.0.0.1:8002/docs` (live API reference)

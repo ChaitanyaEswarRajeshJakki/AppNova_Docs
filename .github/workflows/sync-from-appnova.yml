@@ -1,0 +1,75 @@
+name: Sync from AppNovaAI
+
+on:
+  repository_dispatch:
+    types: [appnova-ai-updated]
+  workflow_dispatch:
+  schedule:
+    - cron: '0 * * * *'   # fallback: every hour
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout AppNova_Docs
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Checkout AppNovaAI
+        uses: actions/checkout@v4
+        with:
+          repository: ChaitanyaEswarRajeshJakki/AppNovaAI
+          path: appnova-source
+          token: ${{ secrets.APPNOVA_PAT }}
+
+      - name: Sync files from AppNovaAI
+        run: |
+          # Sync root README
+          cp appnova-source/README.md README.md
+
+          # Patch in Docs-only sections (SVG embed + Related docs footer)
+          python3 .github/scripts/patch_readme.py
+
+          # Sync main changelog (changes/changes.md → changes.md)
+          if [ -f appnova-source/changes/changes.md ]; then
+            cp appnova-source/changes/changes.md changes.md
+          fi
+
+          # Sync all archived changelogs from changes/ to docs root
+          for f in appnova-source/changes/changes_*.md; do
+            [ -f "$f" ] && cp "$f" "$(basename "$f")"
+          done
+
+          # Sync date-named change entries (e.g. 2026-06-02_refactor.md)
+          for f in appnova-source/changes/[0-9][0-9][0-9][0-9]-*.md; do
+            [ -f "$f" ] && cp "$f" "$(basename "$f")"
+          done
+
+          # Sync deploy guide if present
+          if [ -f appnova-source/DEPLOY_AZURE_VM_UBUNTU.md ]; then
+            cp appnova-source/DEPLOY_AZURE_VM_UBUNTU.md DEPLOY_AZURE_VM_UBUNTU.md
+          fi
+
+          # Sync .env.example (safe template — never sync .env itself)
+          if [ -f appnova-source/.env.example ]; then
+            cp appnova-source/.env.example .env.example
+          fi
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --staged --quiet; then
+            echo "No changes — AppNovaAI is already in sync."
+          else
+            SOURCE_SHA="${{ github.event.client_payload.sha }}"
+            MSG="chore: sync docs from AppNovaAI${SOURCE_SHA:+ (${SOURCE_SHA:0:7})}"
+            git commit -m "$MSG"
+            git push
+          fi

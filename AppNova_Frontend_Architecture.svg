@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 2150" font-family="Segoe UI, system-ui, -apple-system, Helvetica, Arial, sans-serif" role="img" aria-label="AppNova React Frontend Architecture Infographic">
   <title>AppNova React Frontend - Architecture Infographic</title>
-  <desc>Layered architecture diagram: Entry point, App shell, Global context state, Views, Components, Services, Transport (Axios/SSE), and FastAPI backend with 12 AI agents.</desc>
+  <desc>Layered architecture diagram: Entry point, App shell, Global context state, Views, Components, Services, Transport (Axios/SSE), and FastAPI backend with 13 AI agents.</desc>
 
   <!-- Gradients & filters -->
   <defs>
@@ -83,7 +83,7 @@
         <text x="0" y="44" fill="#94a3b8" font-size="13">Main Views</text>
       </g>
       <g transform="translate(690,16)">
-        <text x="0" y="18" fill="#34d399" font-size="26" font-weight="800">12</text>
+        <text x="0" y="18" fill="#34d399" font-size="26" font-weight="800">13</text>
         <text x="0" y="44" fill="#94a3b8" font-size="13">AI Agents (Backend)</text>
       </g>
       <g transform="translate(940,16)">
@@ -229,8 +229,8 @@
       <!-- Second row: notes -->
       <g transform="translate(0,80)">
         <rect width="890" height="56" rx="10" fill="#1f172a" stroke="#701a3d"/>
-        <text x="15" y="22" fill="#fbcfe8" font-size="12" font-weight="700">Per-agent report tabs (12):</text>
-        <text x="15" y="42" fill="#e2e8f0" font-size="11">architecture · code-analysis · code-generation · business-rules · security · devops · documentation · testing · data-migration · ui-ux · integration · migration-planner</text>
+        <text x="15" y="22" fill="#fbcfe8" font-size="12" font-weight="700">Per-agent report tabs (13):</text>
+        <text x="15" y="42" fill="#e2e8f0" font-size="11">architecture · code-analysis · code-generation · business-rules · security · devops · documentation · testing · data-migration · ui-ux · integration · migration-planner · code-review</text>
       </g>
     </g>
   </g>
@@ -361,7 +361,7 @@
 
     <!-- Agents -->
     <g transform="translate(710,20)">
-      <text x="0" y="14" fill="#fda4af" font-weight="700" font-size="13">12 AI Agents</text>
+      <text x="0" y="14" fill="#fda4af" font-weight="700" font-size="13">13 AI Agents</text>
       <g font-size="11" fill="#fee2e2">
         <g transform="translate(0,24)"><rect width="200" height="24" rx="6" fill="#2a0810" stroke="#991b1b"/><text x="100" y="16" text-anchor="middle">architecture</text></g>
         <g transform="translate(210,24)"><rect width="200" height="24" rx="6" fill="#2a0810" stroke="#991b1b"/><text x="100" y="16" text-anchor="middle">code-analysis</text></g>
@@ -375,6 +375,7 @@
         <g transform="translate(210,144)"><rect width="200" height="24" rx="6" fill="#2a0810" stroke="#991b1b"/><text x="100" y="16" text-anchor="middle">ui-ux</text></g>
         <g transform="translate(0,174)"><rect width="200" height="24" rx="6" fill="#2a0810" stroke="#991b1b"/><text x="100" y="16" text-anchor="middle">integration</text></g>
         <g transform="translate(210,174)"><rect width="200" height="24" rx="6" fill="#2a0810" stroke="#991b1b"/><text x="100" y="16" text-anchor="middle">migration-planner</text></g>
+        <g transform="translate(0,204)"><rect width="410" height="24" rx="6" fill="#2a0810" stroke="#991b1b"/><text x="205" y="16" text-anchor="middle">code-review</text></g>
       </g>
 
       <!-- Data sources -->

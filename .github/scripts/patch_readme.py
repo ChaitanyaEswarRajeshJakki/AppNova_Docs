@@ -43,6 +43,14 @@ if "AppNova_Frontend_Architecture.svg" not in content:
 if "## Related docs" not in content:
     content = content.rstrip("\n") + "\n" + RELATED_DOCS_BLOCK
 
+# Fix agent count — AppNovaAI README may say 14 (includes removed discovery agent)
+# Actual AGENT_REGISTRY has 13 entries; discovery is not registered.
+import re
+content = re.sub(r"\*\*14 specialist agents\*\*", "**13 specialist agents**", content)
+content = re.sub(r"## 🤖 The 14 specialist agents", "## 🤖 The 13 specialist agents", content)
+# Remove the discovery row from the agents table if present
+content = re.sub(r"\| `discovery` \|[^\n]+\n", "", content)
+
 with open("README.md", "w", encoding="utf-8") as f:
     f.write(content)
 

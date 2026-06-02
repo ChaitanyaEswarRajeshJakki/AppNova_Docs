@@ -31,7 +31,7 @@
 AppNova is a self-hosted modernization studio that ingests a legacy codebase and delivers a complete, demoable migration package:
 
 - 💬 **Per-agent chat drawer** on every report card — ask follow-ups, request edits, or flip into **Fix code** mode and let Claude edit the converted project in place. Every code-mode turn snapshots `converted/` first so any edit is reversible.
-- 🧠 **14 specialist agents** — discovery, code-analysis, architecture, security, business-rules, integration, data-migration, devops, migration-planner, code-generation, documentation, code-review, testing, ui-ux.
+- 🧠 **13 specialist agents** — code-analysis, architecture, security, business-rules, integration, data-migration, devops, migration-planner, code-generation, documentation, code-review, testing, ui-ux.
 - 📚 **Playbook + RAG layer** — every supported stack (Laravel → .NET, AngularJS → React, React-class → React-TS) ships a `PlaybookDefinition` ([backend/playbooks/](backend/playbooks/)) with idiomatic-translation hints, type-mapping tables, parity floors, and per-agent prompts. The optional **ChromaDB RAG** layer ([backend/playbooks/rag/](backend/playbooks/rag/)) retrieves hand-authored gold examples + verified prior conversions + sibling files from the same upload, and splices them into `code-generation` and `migration-planner` prompts as a `RETRIEVED EXAMPLES` block. Source ingestion is per-session (no cross-tenant leakage), result ingestion is gated by parity ≥ floor + supervisor-ok. Disable any time with `APPNOVA_RAG_ENABLED=0`.
 - 🪵 **Live logs drawer** in the top bar — backend log tail, per-agent stream logs (success + error), HTTP request/response previews, color-coded errors. 3 s auto-refresh, surfaces what is actually broken without ssh-ing into the host.
 - 🛡️ **Production-ready placeholder hardening** — deploy-details form (24 fields incl. Azure AD GUIDs / Key Vault refs / SMTP / SSO), regex-based leak detector, **automatic quarantine pass** that rewrites any leaked literal to a `__FIELDNAME__` placeholder + ships a deterministic `docs/SECRETS_MAPPING.md` with the exact `az keyvault secret set` / `dotnet user-secrets set` commands. No more `BeagleVM` / `aries_db_dev` / real GUIDs in the converted output.
@@ -134,13 +134,12 @@ AppNova is a self-hosted modernization studio that ingests a legacy codebase and
 
 ---
 
-## 🤖 The 14 specialist agents
+## 🤖 The 13 specialist agents
 
 Every agent is registered in [`backend/core/config.py`](backend/core/config.py) (`AGENT_REGISTRY`). Tiers resolve to a model via `model_for(tier)` — the default pinning is **Claude Sonnet 4.6 across every tier** so demo-freeze replays are byte-for-byte reproducible. Override per-tier with `HEAVY_MODEL` / `LIGHT_MODEL` / `DISCOVERY_MODEL` env vars.
 
 | Agent ID | Tier | Wave | Output |
 |---|---|---|---|
-| `discovery` | heavy | 0 | Tech inventory, narrative overview, per-agent context briefs |
 | `code-analysis` | heavy | 1 | Module graph, complexity, tech debt, ER diagram |
 | `architecture` | heavy | 1 | Layer map, mermaid flowcharts, ADRs |
 | `business-rules` | heavy | 1 | Rules catalog, validation matrix, per-workflow state machines |

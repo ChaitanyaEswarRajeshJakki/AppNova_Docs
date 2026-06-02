@@ -5,3 +5,4 @@ Thumbs.db
 *.swp
 .env
 *.env.local
+appnova-source/

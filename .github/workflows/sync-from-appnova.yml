@@ -1,11 +1,11 @@
 name: Sync from AppNovaAI
 
 on:
-  repository_dispatch:
-    types: [appnova-ai-updated]
-  workflow_dispatch:
+  push:
+    branches: [main]
   schedule:
-    - cron: '0 * * * *'   # fallback: every hour
+    - cron: '0 * * * *'   # every hour
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -19,15 +19,41 @@ jobs:
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+          submodules: false
 
-      - name: Checkout AppNovaAI
-        uses: actions/checkout@v4
-        with:
-          repository: ChaitanyaEswarRajeshJakki/AppNovaAI
-          path: appnova-source
-          token: ${{ secrets.APPNOVA_PAT }}
+      - name: Check if AppNovaAI has new commits
+        id: sha_check
+        env:
+          APPNOVA_PAT: ${{ secrets.APPNOVA_PAT }}
+        run: |
+          LATEST_SHA=$(curl -sf \
+            -H "Authorization: Bearer $APPNOVA_PAT" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/ChaitanyaEswarRajeshJakki/AppNovaAI/commits/main \
+            | python3 -c "import sys,json; print(json.load(sys.stdin)['sha'])")
+
+          STORED_SHA=$(cat .appnova-last-sha 2>/dev/null || echo "")
+
+          echo "latest=$LATEST_SHA" >> $GITHUB_OUTPUT
+          echo "stored=$STORED_SHA"  >> $GITHUB_OUTPUT
+
+          if [ "$LATEST_SHA" = "$STORED_SHA" ]; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+            echo "AppNovaAI unchanged (SHA: ${LATEST_SHA:0:7}) — skipping sync."
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+            echo "New commits detected (${STORED_SHA:0:7} → ${LATEST_SHA:0:7}) — syncing."
+          fi
+
+      - name: Clone AppNovaAI
+        if: steps.sha_check.outputs.changed == 'true'
+        run: |
+          git clone --depth=1 \
+            https://x-access-token:${{ secrets.APPNOVA_PAT }}@github.com/ChaitanyaEswarRajeshJakki/AppNovaAI.git \
+            appnova-source
 
       - name: Sync files from AppNovaAI
+        if: steps.sha_check.outputs.changed == 'true'
         run: |
           # Sync root README
           cp appnova-source/README.md README.md
@@ -60,16 +86,19 @@ jobs:
             cp appnova-source/.env.example .env.example
           fi
 
+          # Record the synced SHA so next run can skip if nothing changed
+          echo "${{ steps.sha_check.outputs.latest }}" > .appnova-last-sha
+
       - name: Commit and push if changed
+        if: steps.sha_check.outputs.changed == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add -A
           if git diff --staged --quiet; then
-            echo "No changes — AppNovaAI is already in sync."
+            echo "Files identical — nothing to commit."
           else
-            SOURCE_SHA="${{ github.event.client_payload.sha }}"
-            MSG="chore: sync docs from AppNovaAI${SOURCE_SHA:+ (${SOURCE_SHA:0:7})}"
-            git commit -m "$MSG"
+            SHA="${{ steps.sha_check.outputs.latest }}"
+            git commit -m "chore: sync docs from AppNovaAI (${SHA:0:7})"
             git push
           fi

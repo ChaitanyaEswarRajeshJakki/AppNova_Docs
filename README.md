@@ -31,7 +31,7 @@
 AppNova is a self-hosted modernization studio that ingests a legacy codebase and delivers a complete, demoable migration package:
 
 - 💬 **Per-agent chat drawer** on every report card — ask follow-ups, request edits, or flip into **Fix code** mode and let Claude edit the converted project in place. Every code-mode turn snapshots `converted/` first so any edit is reversible.
-- 🧠 **13 specialist agents** — code-analysis, architecture, security, business-rules, integration, data-migration, devops, migration-planner, code-generation, documentation, code-review, testing, ui-ux.
+- 🧠 **13 specialist agents** — code-analysis, architecture, security, business-rules, integration, data-migration, devops, migration-planner, code-generation, documentation, code-review, testing, ui-ux. (`discovery` is a Wave 0 pre-step, not a registry agent.)
 - 📚 **Playbook + RAG layer** — every supported stack (Laravel → .NET, AngularJS → React, React-class → React-TS) ships a `PlaybookDefinition` ([backend/playbooks/](backend/playbooks/)) with idiomatic-translation hints, type-mapping tables, parity floors, and per-agent prompts. The optional **ChromaDB RAG** layer ([backend/playbooks/rag/](backend/playbooks/rag/)) retrieves hand-authored gold examples + verified prior conversions + sibling files from the same upload, and splices them into `code-generation` and `migration-planner` prompts as a `RETRIEVED EXAMPLES` block. Source ingestion is per-session (no cross-tenant leakage), result ingestion is gated by parity ≥ floor + supervisor-ok. Disable any time with `APPNOVA_RAG_ENABLED=0`.
 - 🪵 **Live logs drawer** in the top bar — backend log tail, per-agent stream logs (success + error), HTTP request/response previews, color-coded errors. 3 s auto-refresh, surfaces what is actually broken without ssh-ing into the host.
 - 🛡️ **Production-ready placeholder hardening** — deploy-details form (24 fields incl. Azure AD GUIDs / Key Vault refs / SMTP / SSO), regex-based leak detector, **automatic quarantine pass** that rewrites any leaked literal to a `__FIELDNAME__` placeholder + ships a deterministic `docs/SECRETS_MAPPING.md` with the exact `az keyvault secret set` / `dotnet user-secrets set` commands. No more `BeagleVM` / `aries_db_dev` / real GUIDs in the converted output.
@@ -44,6 +44,7 @@ AppNova is a self-hosted modernization studio that ingests a legacy codebase and
 - 💵 **Cost tracker** persists per-agent token counts to a 5-sheet Excel workbook — see exactly what each agent cost for a run.
 - 🎛️ **Director mode** (`APPNOVA_DIRECTOR_MODE=1`) lets Claude itself decide which sub-agents to spawn instead of running the fixed DAG — useful for open-ended codebases.
 - 🔒 **100% local code** — your source never leaves your machine; only prompts go to Anthropic.
+- 🛡️ **Governance layer** ([backend/governance/](backend/governance/)) — upload-time **input sanitizer** (blocked extensions, path-traversal, prompt-injection detection), per-agent **output scrubber** (PII + secret redaction before reports are saved), and an **append-only audit log** (`logs/audit.jsonl`) recording auth, upload, and every agent lifecycle event. All three passes are individually togglable via env vars and configurable via `backend/governance/policies/default_policy.yaml`.
 
 ---
 
@@ -210,13 +211,48 @@ Optional retrieval layer that splices a `## RETRIEVED EXAMPLES` block into the p
 |---|---|---|---|
 | `{playbook}__curated` | Hand-authored source→target pairs in [backend/playbooks/examples/`<id>`.jsonl](backend/playbooks/examples/) | Permanent, version-controlled | Highest-trust hits — retrieved first |
 | `{playbook}__learned` | Auto-stored verified conversions, written by `migration_pipeline._step_rag_learn` after parity/round-trip gates pass | Permanent, gated writes | Medium-trust — retrieved second |
-| `{playbook}__source__{session_id}` | Per-symbol chunks of the user's uploaded code, written by the supervisor at the top of a run | Per-session — drop via `POST /api/rag/clear-session/{sid}` | Sibling-file context |
+| `{playbook}__source__{session_id}` | Per-symbol chunks of the user's uploaded code, written by the supervisor at the top of a run | Per-session — dropped automatically when the session ends (stop / error / completion); also via `POST /api/rag/clear-session/{sid}` for manual cleanup | Sibling-file context |
 
 Retrieval order is `curated → learned → source`, deduped by `(kind, path, symbol_name)` then sorted by score. `format_hits_for_prompt(...)` renders the block with language-tagged code fences. Prompt-bloat ceiling: `PlaybookRAG.max_context_tokens` × 4 chars.
 
 **Three-tier embedding provider:** OpenAI `text-embedding-3-small` (preferred, requires `OPENAI_API_KEY`) → `sentence-transformers` `BAAI/bge-small-en-v1.5` (local) → hash-based deterministic fallback (plumbing only). The provider AppNova is using is reported by `GET /api/rag/status`.
 
-**Write-gating for `__learned`:** `parity_pct ≥ playbook.rag.learned_parity_floor_pct` AND `supervisor_ok` AND (round-trip passed when `learned_require_round_trip=True`). Every row carries `agent_version` so a regressed batch can be purged via `coll.delete(where={"agent_version": "v2026.05.13"})`.
+**Write-gating for `__learned`:** `parity_pct ≥ playbook.rag.learned_parity_floor_pct` AND `supervisor_ok` AND (round-trip passed when `learned_require_round_trip=True`). Every row carries `agent_version` so a regressed batch can be purged via the admin CLI (see below).
+
+**RAG corpus admin CLI** ([backend/playbooks/rag/admin.py](backend/playbooks/rag/admin.py)):
+
+```bash
+# Show Chroma collection counts and status
+python -m backend.playbooks.rag.admin stats
+
+# List agent_version tags present in __learned (all playbooks or one)
+python -m backend.playbooks.rag.admin list-versions
+python -m backend.playbooks.rag.admin list-versions --playbook laravel-to-dotnet
+
+# Delete __learned entries by agent_version — purge a regressed batch
+python -m backend.playbooks.rag.admin purge --version v2026.05.13
+python -m backend.playbooks.rag.admin purge --version v2026.05.13 --playbook laravel-to-dotnet
+```
+
+**RAG recall eval harness** ([backend/playbooks/rag/tests/eval.py](backend/playbooks/rag/tests/eval.py)):
+
+```bash
+# Recall@3 for one playbook
+python -m backend.playbooks.rag.tests.eval \
+    --playbook laravel-to-dotnet \
+    --queries scripts/rag_eval_queries.jsonl
+
+# A/B comparison: RAG-on vs. no-retrieval baseline — shows lift in percentage points
+python -m backend.playbooks.rag.tests.eval \
+    --queries scripts/rag_eval_queries.jsonl \
+    --ab
+
+# Cross-playbook (all playbooks in the JSONL in one run)
+python -m backend.playbooks.rag.tests.eval \
+    --queries scripts/rag_eval_queries.jsonl --ab
+```
+
+10 reference queries covering all three registered playbooks live in [`scripts/rag_eval_queries.jsonl`](scripts/rag_eval_queries.jsonl). Run `POST /api/rag/seed` once to populate `__curated` before the eval, otherwise recall = 0%.
 
 **Per-symbol chunker** ([backend/playbooks/rag/chunking/chunker.py](backend/playbooks/rag/chunking/chunker.py)): regex-based header detection per language (PHP / Python / JS / TS / TSX / C# / interfaces / records / arrow-fn consts), brace walker that respects string literals, indent walker for Python. Files with no symbol matches (stylesheets, blade, configs, HTML) fall back to whole-file chunks. Skips `node_modules`, `vendor`, `.git`, `__pycache__`, `_appnova_legacy_runtime`.
 
@@ -616,8 +652,9 @@ appnova_2026-04-17_claude-code/
 │       │   └── retriever.py     ← top-K across curated/learned/source + format_hits_for_prompt + context_for_agent
 │       ├── utils/               ← Utilities
 │       │   └── seed.py          ← Idempotent rebuild of __curated from examples/*.jsonl
+│       ├── admin.py             ← Admin CLI: stats / list-versions / purge --version (python -m backend.playbooks.rag.admin)
 │       ├── tests/               ← Eval harness
-│       │   └── eval.py          ← Recall-pct smoke harness (python -m backend.playbooks.rag.tests.eval --queries ...)
+│       │   └── eval.py          ← Recall-pct smoke harness + A/B (--ab flag) (python -m backend.playbooks.rag.tests.eval --queries ...)
 │       ├── prompts/             ← Prompt templates (extensible)
 │       └── llm/                 ← LLM call helpers (extensible)
 ├── frontend/
@@ -627,6 +664,7 @@ appnova_2026-04-17_claude-code/
 │   ├── style.css                ← Tokens + cards + chat drawer + mermaid themed blocks
 │   └── theme.js                 ← light / dark / auto + appnova:theme-changed event
 ├── scripts/
+│   ├── rag_eval_queries.jsonl   ← 10 reference RAG eval queries (laravel-to-dotnet ×4, angularjs-to-react ×3, react-upgrade ×3)
 │   ├── smoke/                   ← Smoke test harnesses
 │   │   └── smoke_*.py           ← mermaid, coverage, line fidelity, route-link, UI-binding, …
 │   ├── demos/                   ← Demo management scripts
@@ -764,7 +802,7 @@ node --check frontend/app.js
 - **Adding a new playbook** — create a `PlaybookDefinition` instance in [`backend/playbooks/registry.py`](backend/playbooks/registry.py) with a unique `id`, populate `source_signals` (fnmatch globs — include stylesheet patterns or they'll vanish), wire up `mapping` / `transformation` / `validation` / `workflow` / `feedback` / `rag`, then drop a hand-authored seed file at `backend/playbooks/examples/<id>.jsonl` (5–20 source→target pairs). `resolve_playbook` auto-detects the new stack. Run `POST /api/rag/seed/<id>` to populate `__curated`.
 - **Tuning a playbook's prompt hints** — edit `PlaybookTransformation.agent_hints` for the relevant `agent_id`. The hints are injected as a "PLAYBOOK GUIDANCE" block before `YOUR TASK` and are MANDATORY rules — they override `YOUR TASK` for framework idioms (control flow / lifecycle / ORM / templating). Double-pin recurring problems: hint in `agent_hints` AND reinforce in [`backend/agents/prompts.py`](backend/agents/prompts.py) `_AGENT_TARGET_DIRECTIVES`.
 - **Promoting RAG to a new agent** — add the `agent_id` to `PlaybookRAG.enabled_agent_ids` on the target playbook. `build_agent_prompt` automatically injects the `RETRIEVED EXAMPLES` block for any agent in that tuple. Test by `curl /api/rag/status` (verify `agents` list) + run a fresh session and grep the persisted agent log for `RETRIEVED EXAMPLES`.
-- **Purging a regressed `__learned` batch** — bump `APPNOVA_AGENT_VERSION` *before* the risky prompt edit ships. After detecting regression, drop the batch from chromadb directly: `coll.delete(where={"agent_version": "v2026.05.13"})`. The next run starts populating with the new version tag.
+- **Purging a regressed `__learned` batch** — bump `APPNOVA_AGENT_VERSION` *before* the risky prompt edit ships. After detecting regression, use the admin CLI: `python -m backend.playbooks.rag.admin purge --version v2026.05.13`. Check which versions exist first with `list-versions`. The next run starts populating with the new version tag.
 - **Disabling RAG without uninstalling chromadb** — set `APPNOVA_RAG_ENABLED=0` and restart. Every `RETRIEVED EXAMPLES` block disappears from prompts; the pipeline behaves byte-for-byte like pre-RAG. Re-enable with `APPNOVA_RAG_ENABLED=1` (or unset).
 
 ---

@@ -80,12 +80,12 @@ AppNova is a self-hosted modernization studio that ingests a legacy codebase and
 │             with cooldown between — APPNOVA_CODEGEN_CHUNK_SIZE)           │
 │   Wave 3b: documentation                 ← writes converted/docs/         │
 │   Wave 4:  code-review · testing · ui-ux                                  │
-│   Wave 5:  migration_pipeline (deterministic, post-agent)                  │
-│            • field_extractor → augment → emit                              │
-│            • parity_checker → FIELD_PARITY.md/.json                        │
+│   Wave 5:  migration_pipeline (deterministic, post-agent)                 │
+│            • field_extractor → augment → emit                             │
+│            • parity_checker → FIELD_PARITY.md/.json                       │
 │            • round_trip_tester (plan or live, auto-upgrades to live       │
 │              when run_manager reports a live converted backend +          │
-│              APPNOVA_ROUND_TRIP_AUTOSTART=true)                            │
+│              APPNOVA_ROUND_TRIP_AUTOSTART=true)                           │
 │            • rag-learn — gated write of verified rows into                │
 │              {playbook}__learned (parity ≥ floor + supervisor_ok)         │
 │                                                                           │

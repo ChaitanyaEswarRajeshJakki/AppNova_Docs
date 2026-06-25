@@ -364,6 +364,15 @@ All routes live in [`backend/main.py`](backend/main.py). Swagger UI is served at
 | POST | `/api/demo-sessions/load/{slug}` | Restore a demo to `uploads/` |
 | DELETE | `/api/demo-sessions/{slug}` | Delete a frozen demo |
 
+#### Deterministic re-conversion (auto-replay)
+
+LLM output is **not** byte-deterministic — the agent runner pins no temperature/seed, so two runs of the same source produce different `converted/` bytes. The **only** way a re-run reproduces a prior conversion *exactly* is freeze + replay. Every frozen session records the source `project_hash` (same content hash the analysis cache uses) in its `manifest.replay`. When `APPNOVA_AUTO_REPLAY_FROZEN=1` (default), a fresh upload whose `project_hash` matches a frozen session is served that session's converted bytes **verbatim** — no agents run, no manual step. The dispatch lives in `_run_analysis_stream` (it reuses `demo_session.materialize_frozen` + the cached-replay event stream) and is fully guarded: any miss/error falls through to a normal run.
+
+- Freeze a golden conversion straight from disk (no live session needed):
+  `python -m scripts.freeze_golden` — pins `References_by_Krishna/TotalBookingAI-Input` → the golden `.NET 8 + React` output under demo slug `totalbooking`.
+- Re-freeze whenever the golden changes; override inputs via `APPNOVA_GOLDEN_SOURCE` / `APPNOVA_GOLDEN_CONVERTED` / `APPNOVA_GOLDEN_SLUG`.
+- `demo_session.freeze_from_disk()` / `find_frozen_by_project_hash()` / `materialize_frozen()` are the supporting API.
+
 ### 🧪 Run / browser-test / review
 | Method | Route | Purpose |
 |---|---|---|
@@ -499,6 +508,7 @@ Everything lives in [`.env`](.env) at the project root. Common ones:
 | `ORCHESTRATOR_TIMEOUT` | `3600` | Whole-run cap for orchestrator mode |
 | `UPLOAD_DIR` | `./uploads` | Per-session working tree root |
 | `APPNOVA_COVERAGE_FLOOR` | `70` | Min source→target file-coverage % below which `code-generation` is downgraded to status=error so downstream agents skip cleanly |
+| `APPNOVA_AUTO_REPLAY_FROZEN` | `1` | When a fresh upload's content hash matches a frozen demo session's recorded `project_hash`, serve that session's converted bytes **verbatim** (via `demo_session.materialize_frozen`) instead of re-running the agents. This is the only path that reproduces a prior conversion **exactly** — LLM output is not byte-deterministic. No-op unless a matching frozen session exists. Set to `0` to always run fresh. Freeze a golden with `python -m scripts.freeze_golden`. |
 | `APPNOVA_QUARANTINE_LEAKS` | `true` | When `true`, the inline quarantine pass auto-rewrites every leak literal in `converted/` to a `__FIELDNAME__` placeholder. Set to `false` for audit-only behaviour (DEPLOY_AUDIT.md still written). |
 | `APPNOVA_CODEGEN_MULTIPASS` | `true` | Default-on. Set to `false` to force single-pass `code-generation`. Multipass chunks `file_map.json` into N-row slices with 30 s cooldown — required for projects with ≥ 200 mappings where single-pass blew the output ceiling. |
 | `APPNOVA_CODEGEN_CHUNK_SIZE` | `50` | Rows per multipass chunk. Bumped to 50 (from 30 → 80) after the 2026-05-15 audit: 50 × ~6 k chars ≈ 300 k chars, well inside Claude's ceiling, and avoids the ~4 min cooldowns multiple sub-50 chunks would burn. Cross-chunk dependencies don't break because files are written to disk between chunks. |

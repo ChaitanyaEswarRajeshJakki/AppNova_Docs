@@ -26,11 +26,27 @@ jobs:
         env:
           APPNOVA_PAT: ${{ secrets.APPNOVA_PAT }}
         run: |
-          LATEST_SHA=$(curl -sf \
+          if [ -z "$APPNOVA_PAT" ]; then
+            echo "::error::APPNOVA_PAT secret is empty or not set."
+            exit 1
+          fi
+
+          RESPONSE=$(curl -s -w $'\n%{http_code}' \
             -H "Authorization: Bearer $APPNOVA_PAT" \
             -H "Accept: application/vnd.github+json" \
-            https://api.github.com/repos/ChaitanyaEswarRajeshJakki/AppNovaAI/commits/main \
-            | python3 -c "import sys,json; print(json.load(sys.stdin)['sha'])")
+            https://api.github.com/repos/ChaitanyaEswarRajeshJakki/AppNovaAI/commits/main)
+          HTTP_CODE=$(printf '%s' "$RESPONSE" | tail -n1)
+          BODY=$(printf '%s' "$RESPONSE" | sed '$d')
+
+          echo "GitHub API HTTP status: $HTTP_CODE"
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "::error::GitHub API request failed with HTTP $HTTP_CODE"
+            echo "Response body:"
+            echo "$BODY"
+            exit 1
+          fi
+
+          LATEST_SHA=$(printf '%s' "$BODY" | python3 -c "import sys,json; print(json.load(sys.stdin)['sha'])")
 
           STORED_SHA=$(cat .appnova-last-sha 2>/dev/null || echo "")
 
